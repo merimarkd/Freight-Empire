@@ -177,4 +177,52 @@ router.post('/switch-company', async (req, res) => {
     res.status(500).json({ error: 'Failed to switch company' });
   }
 });
+
+/**
+ * GET /api/auth/search-cities?q=query
+ * Search for US cities via Mapbox Geocoding API
+ */
+router.get('/search-cities', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    }
+
+    const mapboxKey = process.env.MAPBOX_API_KEY;
+    if (!mapboxKey) {
+      return res.status(500).json({ error: 'Mapbox key not configured' });
+    }
+
+    const query = encodeURIComponent(`${q}, USA`);
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxKey}&country=us&limit=10`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.features || data.features.length === 0) {
+      return res.json({ cities: [] });
+    }
+
+    const cities = data.features
+      .filter(feature => {
+        const types = feature.place_type || [];
+        return types.includes('place');
+      })
+      .map(feature => ({
+        name: feature.place_name,
+        latitude: feature.geometry.coordinates[1],
+        longitude: feature.geometry.coordinates[0],
+        id: feature.id
+      }))
+      .slice(0, 10);
+
+    res.json({ cities });
+  } catch (error) {
+    console.error('Error searching cities:', error);
+    res.status(500).json({ error: 'Failed to search cities' });
+  }
+});
+
 module.exports = router;

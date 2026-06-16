@@ -48,6 +48,10 @@ app.use('/api/game', gameRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/banking', bankingRoutes);
 
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
