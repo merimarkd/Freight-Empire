@@ -1,2 +1,2 @@
-# trucking-empire-server
+# freight-empire-server
 Backend server for Trucking Empire MMO
