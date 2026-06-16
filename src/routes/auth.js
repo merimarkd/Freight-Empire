@@ -84,46 +84,55 @@ function generateMCNumber() {
 }
 
 // Create company + player on first login
+
+// Create company + player on first login
 router.post('/create-company', async (req, res) => {
   try {
-    const { name, dotNumber, mcNumber, ownerId } = req.body;
-
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing authorization token' });
+    }
+    
+    const token = authHeader.substring(7);
+    const decoded = require('jsonwebtoken').verify(token, 'freight-empire-secret-key-change-in-production');
+    const ownerId = decoded.playerId;
+    
+    const { name, hqCity, hqLatitude, hqLongitude } = req.body;
+    
     if (!name || !ownerId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-
+    
     const companiesResult = await pool.query(
       'SELECT COUNT(*) as count FROM companies WHERE owner_id = $1',
       [ownerId]
     );
-    const companyCount = parseInt(companiesResult.rows[0].count);
-
-    if (companyCount >= 3) {
-      return res.status(400).json({ 
-        error: 'Player already owns 3 companies. Maximum limit reached.' 
-      });
+    
+    if (parseInt(companiesResult.rows[0].count) >= 3) {
+      return res.status(400).json({ error: 'Player already owns 3 companies. Maximum limit reached.' });
     }
-
+    
     const companyResult = await pool.query(
-      'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, dotNumber || null, mcNumber || null, ownerId, 500000]
+      'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash, hq_city, hq_latitude, hq_longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [name, null, null, ownerId, 500000, hqCity || null, hqLatitude || null, hqLongitude || null]
     );
+    
     const company = companyResult.rows[0];
-
+    
     await pool.query(
       'INSERT INTO company_statistics (company_id, company_created_at) VALUES ($1, $2)',
       [company.id, new Date()]
     );
-
+    
     await pool.query(
       'UPDATE players SET current_company_id = $1 WHERE id = $2',
       [company.id, ownerId]
     );
-
+    
     res.json(company);
   } catch (error) {
     console.error('Error creating company:', error);
-    res.status(500).json({ error: 'Failed to create company' });
+    res.status(500).json({ error: error.message });
   }
 });
 
