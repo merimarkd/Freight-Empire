@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Freight Empire - Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial; background: #0d1117; color: #c9d1d9; padding: 20px; }
+    .container { max-width: 1600px; margin: 0 auto; }
+    h1 { color: #58a6ff; margin-bottom: 30px; }
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid rgba(88,166,255,0.2); margin-bottom: 30px; }
+    .tab { padding: 12px 20px; cursor: pointer; color: #8b949e; border: none; background: none; font-size: 1rem; }
+    .tab.active { color: #58a6ff; border-bottom: 2px solid #58a6ff; margin-bottom: -2px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 40px; }
+    .stat-card { background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 8px; padding: 20px; }
+    .stat-number { font-size: 2.5rem; color: #58a6ff; font-weight: bold; }
+    .stat-label { color: #8b949e; margin-top: 8px; font-size: 0.9rem; }
+    .search { margin-bottom: 20px; }
+    .search input { padding: 10px 15px; background: rgba(88, 166, 255, 0.05); border: 1px solid rgba(88, 166, 255, 0.2); color: #c9d1d9; border-radius: 6px; width: 300px; }
+    table { width: 100%; border-collapse: collapse; background: rgba(13, 17, 23, 0.5); border: 1px solid rgba(88, 166, 255, 0.1); }
+    th { background: rgba(88, 166, 255, 0.1); padding: 12px; text-align: left; border-bottom: 1px solid rgba(88, 166, 255, 0.2); color: #58a6ff; font-weight: 600; }
+    td { padding: 12px; border-bottom: 1px solid rgba(88, 166, 255, 0.1); }
+    tr:hover { background: rgba(88, 166, 255, 0.05); }
+    .loading { color: #8b949e; font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>FREIGHT EMPIRE - Admin Panel</h1>
+  
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(event, 'overview')">Overview</button>
+    <button class="tab" onclick="switchTab(event, 'companies')">Companies</button>
+    <button class="tab" onclick="switchTab(event, 'players')">Players</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="tab-content active" id="overview">
+    <div class="stats" id="statsContainer">
+      <div class="stat-card"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- COMPANIES -->
+  <div class="tab-content" id="companies">
+    <div class="search">
+      <input type="text" id="companySearch" placeholder="Search company name..." onkeyup="filterCompanies()">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Company Name</th>
+          <th>Owner ID</th>
+          <th>Trucks</th>
+          <th>Drivers</th>
+          <th>Active Loans</th>
+          <th>Cash</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody id="companiesTable">
+        <tr><td colspan="7" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PLAYERS -->
+  <div class="tab-content" id="players">
+    <div class="search">
+      <input type="text" id="playerSearch" placeholder="Search username or email..." onkeyup="filterPlayers()">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Credit Score</th>
+          <th>Current Company</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody id="playersTable">
+        <tr><td colspan="5" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const API = 'http://143.198.176.234:5000';
+  let allCompanies = [];
+  let allPlayers = [];
+
+  window.addEventListener('load', () => {
+    loadStats();
+    loadCompanies();
+    loadPlayers();
+  });
+
+  function switchTab(e, tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    e.target.classList.add('active');
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch(API + '/api/game/admin/stats');
+      const stats = await res.json();
+      const html = `
+        <div class="stat-card">
+          <div class="stat-number">${stats.totalPlayers}</div>
+          <div class="stat-label">Total Players</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${stats.totalCompanies}</div>
+          <div class="stat-label">Total Companies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">$${parseFloat(stats.totalCash).toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+          <div class="stat-label">Total Cash</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${stats.avgCreditScore}</div>
+          <div class="stat-label">Avg Credit Score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${stats.activeLoans}</div>
+          <div class="stat-label">Active Loans</div>
+        </div>
+      `;
+      document.getElementById('statsContainer').innerHTML = html;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadCompanies() {
+    try {
+      const res = await fetch(API + '/api/game/admin/companies');
+      allCompanies = await res.json();
+      renderCompanies(allCompanies);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadPlayers() {
+    try {
+      const res = await fetch(API + '/api/auth/admin/players');
+      allPlayers = await res.json();
+      renderPlayers(allPlayers);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function filterCompanies() {
+    const query = document.getElementById('companySearch').value.toLowerCase();
+    const filtered = allCompanies.filter(c => c.name.toLowerCase().includes(query));
+    renderCompanies(filtered);
+  }
+
+  function filterPlayers() {
+    const query = document.getElementById('playerSearch').value.toLowerCase();
+    const filtered = allPlayers.filter(p => 
+      p.username.toLowerCase().includes(query) || 
+      p.email.toLowerCase().includes(query)
+    );
+    renderPlayers(filtered);
+  }
+
+  function renderCompanies(companies) {
+    const html = companies.map(c => `
+      <tr>
+        <td>${c.name}</td>
+        <td>${c.owner_id.substring(0, 8)}</td>
+        <td>${c.truck_count}</td>
+        <td>${c.driver_count}</td>
+        <td>${c.active_loans}</td>
+        <td>$${parseFloat(c.cash).toLocaleString()}</td>
+        <td>${new Date(c.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+    document.getElementById('companiesTable').innerHTML = html || '<tr><td colspan="7">No companies found</td></tr>';
+  }
+
+  function renderPlayers(players) {
+    const html = players.map(p => `
+      <tr>
+        <td>${p.username}</td>
+        <td>${p.email}</td>
+        <td>${p.personal_credit_score}</td>
+        <td>${p.current_company_id ? p.current_company_id.substring(0, 8) : 'None'}</td>
+        <td>${new Date(p.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+    document.getElementById('playersTable').innerHTML = html || '<tr><td colspan="5">No players found</td></tr>';
+  }
+</script>
+</body>
+</html>
