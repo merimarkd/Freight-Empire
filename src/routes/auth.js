@@ -110,9 +110,13 @@ router.post('/create-company', async (req, res) => {
       return res.status(400).json({ error: 'Player already owns 3 companies. Maximum limit reached.' });
     }
     
-    const companyResult = await pool.query(
+    // Generate unique DOT and MC numbers
+const dotNumber = 'DOT' + Math.random().toString(36).substring(2, 10).toUpperCase();
+const mcNumber = 'MC' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+const companyResult = await pool.query(
   'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-  [name, null, null, ownerId, 500000]
+  [name, dotNumber, mcNumber, ownerId, 500000]
 );
     
     const company = companyResult.rows[0];
