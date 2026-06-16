@@ -217,4 +217,14 @@ router.get('/loads/:companyId', async (req, res) => {
   }
 });
 
+// Admin: Get all companies
+router.get('/admin/companies', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, dot_number, mc_number, owner_id, cash, created_at FROM companies ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
