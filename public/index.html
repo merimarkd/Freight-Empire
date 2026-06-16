@@ -3,501 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Freight Empire - Trucking MMO</title>
+  <title>Freight Empire</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: #0a0e27;
-      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1b2a 100%);
+      color: #c9d1d9;
       overflow: hidden;
+      min-height: 100vh;
     }
-
-    .container {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+    .grid { position: fixed; width: 100%; height: 100%; background-image: linear-gradient(rgba(88,166,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(88,166,255,0.05) 1px, transparent 1px); background-size: 50px 50px; z-index: 0; opacity: 0.3; }
+    .glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(88,166,255,0.1), transparent); border-radius: 50%; filter: blur(80px); z-index: 0; }
+    .glow1 { top: -200px; right: -200px; }
+    .glow2 { bottom: -200px; left: -200px; }
+    .container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+    .box {
+      background: linear-gradient(135deg, rgba(13,17,23,0.95) 0%, rgba(22,27,34,0.95) 100%);
+      border: 1px solid rgba(88,166,255,0.2);
+      border-radius: 8px;
+      padding: 60px 50px;
+      width: 90%;
+      max-width: 480px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(88,166,255,0.1);
+      backdrop-filter: blur(10px);
     }
-
-    .screen {
-      display: none;
-      width: 100%;
-      max-width: 500px;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .header h1 {
-      font-size: 2.5rem;
-      color: #ff9800;
-      font-weight: 700;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-
-    .header p {
-      color: #b0b0b0;
+    h1 { font-size: 2.2rem; color: #58a6ff; margin-bottom: 8px; font-weight: 400; letter-spacing: 1px; }
+    p { color: #8b949e; font-size: 0.85rem; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }
+    label { display: block; color: #58a6ff; font-size: 0.8rem; margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    input { 
+      width: 100%; 
+      padding: 12px 14px; 
+      margin-bottom: 20px; 
+      background: rgba(88,166,255,0.02); 
+      border: 1px solid rgba(88,166,255,0.15); 
+      color: #c9d1d9; 
+      border-radius: 6px; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 0.95rem;
+      transition: all 0.3s;
     }
-
-    .form-group {
-      margin-bottom: 20px;
+    input::placeholder { color: rgba(139,148,158,0.6); }
+    input:focus { 
+      outline: none; 
+      border-color: rgba(88,166,255,0.4);
+      background: rgba(88,166,255,0.05);
+      box-shadow: 0 0 0 3px rgba(88,166,255,0.1);
     }
-
-    label {
-      display: block;
+    button { 
+      width: 100%; 
+      padding: 12px 16px; 
+      background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+      color: #ffffff; 
+      border: 1px solid rgba(88,166,255,0.3);
+      border-radius: 6px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      text-transform: uppercase; 
       font-size: 0.9rem;
-      color: #ff9800;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
-    input[type="email"],
-    input[type="password"],
-    input[type="text"],
-    input[type="search"] {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 1rem;
-      background: #1a1f3a;
-      border: 2px solid #333;
-      color: #e0e0e0;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    input[type="email"]:focus,
-    input[type="password"]:focus,
-    input[type="text"]:focus,
-    input[type="search"]:focus {
-      outline: none;
-      border-color: #ff9800;
-      background: #232841;
-    }
-
-    .search-results {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: #1a1f3a;
-      border: 2px solid #ff9800;
-      border-top: none;
-      border-radius: 0 0 4px 4px;
-      max-height: 250px;
-      overflow-y: auto;
-      z-index: 1000;
-      display: none;
-    }
-
-    .search-results.active {
-      display: block;
-    }
-
-    .search-result-item {
-      padding: 12px 16px;
-      cursor: pointer;
-      border-bottom: 1px solid #333;
-      transition: background 0.2s;
-      font-size: 0.95rem;
-    }
-
-    .search-result-item:hover {
-      background: #ff9800;
-      color: #0a0e27;
-    }
-
-    .search-result-item:last-child {
-      border-bottom: none;
-    }
-
-    .form-group.relative {
-      position: relative;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-transform: uppercase;
       letter-spacing: 1px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(31,111,235,0.3);
     }
-
-    .btn-primary {
-      background: #ff9800;
-      color: #0a0e27;
-    }
-
-    .btn-primary:hover {
-      background: #ffb74d;
+    button:hover { 
+      background: linear-gradient(135deg, #388bfd 0%, #1f6feb 100%);
+      box-shadow: 0 6px 20px rgba(88,166,255,0.4);
       transform: translateY(-2px);
     }
-
-    .btn-primary:active {
-      transform: translateY(0);
+    button:active { transform: translateY(0); }
+    button:disabled { 
+      background: #30363d;
+      color: #6e7681;
+      cursor: not-allowed; 
+      box-shadow: none;
     }
-
-    .btn-primary:disabled {
-      background: #666;
-      cursor: not-allowed;
-      transform: none;
+    .link { 
+      text-align: center; 
+      margin-top: 24px; 
+      font-size: 0.85rem; 
+      color: #8b949e;
     }
-
-    .btn-secondary {
-      background: #333;
-      color: #e0e0e0;
-      margin-top: 10px;
+    .link a { 
+      color: #58a6ff; 
+      cursor: pointer; 
+      text-decoration: none; 
+      font-weight: 500;
+      transition: color 0.3s;
     }
-
-    .btn-secondary:hover {
-      background: #444;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .button-group button {
-      flex: 1;
-    }
-
-    .link {
-      text-align: center;
-      margin-top: 20px;
-      color: #b0b0b0;
-    }
-
-    .link a {
-      color: #ff9800;
-      text-decoration: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .link a:hover {
-      text-decoration: underline;
-    }
-
-    .error {
-      background: #8b0000;
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
-      display: none;
-    }
-
-    .error.active {
-      display: block;
-    }
-
-    .loading {
-      text-align: center;
-      color: #ff9800;
-    }
-
-    .spinner {
-      border: 3px solid #333;
-      border-top: 3px solid #ff9800;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 0.8s linear infinite;
-      margin: 10px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .divider {
-      text-align: center;
-      margin: 30px 0 20px;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .divider::before,
-    .divider::after {
-      content: '';
-      display: inline-block;
-      width: 40%;
-      height: 1px;
-      background: #333;
-      vertical-align: middle;
-      margin: 0 10px;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        padding: 20px;
-      }
-
-      .screen {
-        max-width: 100%;
-      }
-
-      .header h1 {
-        font-size: 2rem;
-      }
-
-      input, button {
-        font-size: 16px;
-      }
-    }
+    .link a:hover { color: #79c0ff; }
   </style>
 </head>
 <body>
-
+<div class="grid"></div>
+<div class="glow glow1"></div>
+<div class="glow glow2"></div>
 <div class="container">
-
-  <!-- LOGIN SCREEN -->
-  <div class="screen active" id="loginScreen">
-    <div class="header">
-      <h1>FREIGHT EMPIRE</h1>
-      <p>Browser-based Trucking MMO</p>
-    </div>
-
-    <div class="error" id="loginError"></div>
-
-    <div class="form-group">
-      <label for="loginEmail">Email</label>
-      <input type="email" id="loginEmail" placeholder="your@email.com" required>
-    </div>
-
-    <div class="form-group">
-      <label for="loginPassword">Password</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" required>
-    </div>
-
-    <button class="btn-primary" onclick="handleLogin()">Login</button>
-
-    <div class="link">
-      Don't have an account? <a onclick="switchScreen('signupScreen')">Create one</a>
-    </div>
+  <div class="box">
+    <h1>FREIGHT EMPIRE</h1>
+    <p>Persistent Trucking MMO</p>
+    <label>Email Address</label>
+    <input type="email" id="email" placeholder="your@email.com">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button onclick="alert('Login coming soon')">LOGIN</button>
+    <div class="link">New player? <a onclick="alert('Create account coming soon')">Register here</a></div>
   </div>
-
-  <!-- SIGNUP SCREEN -->
-  <div class="screen" id="signupScreen">
-    <div class="header">
-      <h1>FREIGHT EMPIRE</h1>
-      <p>Create Your Account</p>
-    </div>
-
-    <div class="error" id="signupError"></div>
-
-    <div class="form-group">
-      <label for="signupEmail">Email</label>
-      <input type="email" id="signupEmail" placeholder="your@email.com" required>
-    </div>
-
-    <div class="form-group">
-      <label for="signupPassword">Password</label>
-      <input type="password" id="signupPassword" placeholder="••••••••" required>
-    </div>
-
-    <div class="form-group">
-      <label for="signupPasswordConfirm">Confirm Password</label>
-      <input type="password" id="signupPasswordConfirm" placeholder="••••••••" required>
-    </div>
-
-    <button class="btn-primary" onclick="handleSignup()">Create Account</button>
-
-    <div class="link">
-      Already have an account? <a onclick="switchScreen('loginScreen')">Login</a>
-    </div>
-  </div>
-
-  <!-- COMPANY CREATION SCREEN -->
-  <div class="screen" id="companyScreen">
-    <div class="header">
-      <h1>CREATE YOUR COMPANY</h1>
-    </div>
-
-    <div class="error" id="companyError"></div>
-
-    <div class="form-group">
-      <label for="companyName">Company Name</label>
-      <input type="text" id="companyName" placeholder="e.g., Acme Trucking LLC" required>
-    </div>
-
-    <div class="form-group relative">
-      <label for="hqSearch">Headquarters Location</label>
-      <input type="search" id="hqSearch" placeholder="Type city or town..." autocomplete="off" required>
-      <div class="search-results" id="searchResults"></div>
-    </div>
-
-    <div id="selectedLocationDisplay" style="display: none; padding: 10px; background: #1a1f3a; border: 1px solid #ff9800; border-radius: 4px; margin-bottom: 20px; font-size: 0.9rem;">
-      <strong style="color: #ff9800;">Selected:</strong> <span id="selectedLocationName"></span>
-    </div>
-
-    <button class="btn-primary" id="createCompanyBtn" onclick="handleCreateCompany()" disabled>Create Company</button>
-
-    <div class="link">
-      <a onclick="handleLogout()">Logout</a>
-    </div>
-  </div>
-
 </div>
-
-<script>
-  const API_BASE = 'http://143.198.176.234:5000';
-  let authToken = localStorage.getItem('authToken');
-  let selectedLocation = null;
-
-  window.addEventListener('DOMContentLoaded', () => {
-    if (authToken) {
-      switchScreen('companyScreen');
-    }
-  });
-
-  function switchScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-  }
-
-  function showError(screenId, message) {
-    const errorEl = document.getElementById(screenId + 'Error');
-    errorEl.textContent = message;
-    errorEl.classList.add('active');
-    setTimeout(() => errorEl.classList.remove('active'), 5000);
-  }
-
-  async function handleLogin() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-
-    if (!email || !password) {
-      showError('login', 'Email and password required');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        showError('login', data.error || 'Login failed');
-        return;
-      }
-
-      authToken = data.token;
-      localStorage.setItem('authToken', authToken);
-      switchScreen('companyScreen');
-    } catch (error) {
-      showError('login', 'Network error. Check your connection.');
-      console.error(error);
-    }
-  }
-
-  async function handleSignup() {
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
-    const confirm = document.getElementById('signupPasswordConfirm').value;
-
-    if (!email || !password || !confirm) {
-      showError('signup', 'All fields required');
-      return;
-    }
-
-    if (password !== confirm) {
-      showError('signup', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 8) {
-      showError('signup', 'Password must be at least 8 characters');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        showError('signup', data.error || 'Signup failed');
-        return;
-      }
-
-      authToken = data.token;
-      localStorage.setItem('authToken', authToken);
-      switchScreen('companyScreen');
-    } catch (error) {
-      showError('signup', 'Network error. Check your connection.');
-      console.error(error);
-    }
-  }
-
-  async function handleCreateCompany() {
-    const companyName = document.getElementById('companyName').value;
-
-    if (!companyName || !selectedLocation) {
-      showError('company', 'Company name and location required');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/create-company`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          name: companyName,
-          hqCity: selectedLocation.name,
-          hqLatitude: selectedLocation.latitude,
-          hqLongitude: selectedLocation.longitude
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        showError('company', data.error || 'Failed to create company');
-        return;
-      }
-
-      window.location.href = '/game';
-    } catch (error) {
-      showError('company', 'Network error');
-      console.error(error);
-    }
-  }
-
-  function handleLogout() {
-    authToken
+</body>
+</html>

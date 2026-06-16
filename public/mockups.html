@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freight Empire Login Mockups</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: 40px 20px;
+    }
+
+    .mockups-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 50px;
+      font-size: 2.5rem;
+    }
+
+    .mockups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 40px;
+      margin-bottom: 60px;
+    }
+
+    .mockup {
+      border: 3px solid #444;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    }
+
+    .mockup-label {
+      padding: 20px;
+      background: #1a1a1a;
+      border-bottom: 2px solid #444;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .mockup-content {
+      aspect-ratio: 16/10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ===== OPTION 1: GRITTY/INDUSTRIAL ===== */
+    .mockup-1 .mockup-content {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background-image: 
+        linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%),
+        radial-gradient(ellipse at 20% 50%, rgba(255, 152, 0, 0.1) 0%, transparent 50%);
+    }
+
+    .mockup-1 .road-lines {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        repeating-linear-gradient(90deg, transparent, transparent 19.5%, #ff9800 19.5%, #ff9800 20%),
+        repeating-linear-gradient(90deg, transparent, transparent 39.5%, #666 39.5%, #666 40%);
+      opacity: 0.3;
+      animation: road-scroll 8s linear infinite;
+    }
+
+    @keyframes road-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(100%); }
+    }
+
+    .mockup-1 .form-box {
+      background: rgba(15, 15, 30, 0.95);
+      border: 3px solid #ff9800;
+      border-radius: 8px;
+      padding: 40px;
+      width: 90%;
+      max-width: 450px;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 0 40px rgba(255, 152, 0, 0.3), inset 0 0 20px rgba(255, 152, 0, 0.1);
+    }
+
+    .mockup-1 .title {
+      font-size: 2rem;
+      color: #ff9800;
+      font-weight: 700;
+      margin-bottom: 5px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+    }
+
+    .mockup-1 .subtitle {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 25px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .mockup-1 input {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      background: rgba(255, 152, 0, 0.05);
+      border: 2px solid #ff9800;
+      color: #fff;
+      font-size: 0.95rem;
+      border-radius: 4px;
+    }
+
+    .mockup-1 button {
+      width: 100%;
+      padding: 12px;
+      background: #ff9800;
+      border: none;
+      color: #000;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      box-shadow: 0 0 20px rgba(255, 152, 0, 0.4);
+    }
+
+    /* ===== OPTION 2: SLEEK/CORPORATE ===== */
+    .mockup-2 .mockup-content {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #2d5a7b 100%);
+    }
+
+    .mockup-2 .grid-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.3;
+    }
+
+    .mockup-2 .form-box {
+      background: rgba(13, 27, 42, 0.92);
+      border: 1px solid rgba(100, 200, 255, 0.3);
+      border-radius: 12px;
+      padding: 50px 45px;
+      width: 90%;
+      max-width: 450px;
+      position: relative;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .mockup-2 .title {
+      font-size: 1.8rem;
+      color: #64c8ff;
+      font-weight: 300;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .mockup-2 .subtitle {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 35px;
+    }
+
+    .mockup-2 input {
+      width: 100%;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      background: rgba(100, 200, 255, 0.05);
+      border: 1px solid rgba(100, 200, 255, 0.2);
+      color: #fff;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+
+    .mockup-2 input:focus {
+      border-color: rgba(100, 200, 255, 0.6);
+      background: rgba(100, 200, 255, 0.1);
+    }
+
+    .mockup-2 button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #64c8ff 0%, #4a9fd8 100%);
+      border: none;
+      color: #0d1b2a;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+
+    .mockup-2 button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(100, 200, 255, 0.3);
+    }
+
+    /* ===== OPTION 3: FUTURISTIC ===== */
+    .mockup-3 .mockup-content {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 50%, #2d1b4e 100%);
+    }
+
+    .mockup-3 .neon-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .mockup-3 .neon-orb-1 {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 0, 255, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+      top: -50px;
+      right: -100px;
+      filter: blur(40px);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .mockup-3 .neon-orb-2 {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(0, 255, 200, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      bottom: -50px;
+      left: -80px;
+      filter: blur(50px);
+      animation: float 8s
