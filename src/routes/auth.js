@@ -21,13 +21,13 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Email already in use' });
     }
     
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // For now, just create a player without password storage
     const result = await pool.query(
-      'INSERT INTO players (email, password_hash, cash, credit_score, iss_score, iss_tier) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [email, hashedPassword, 500000, 650, 100, 'BASELINE']
+      'INSERT INTO players (email, cash, credit_score, iss_score, iss_tier) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [email, 500000, 650, 100, 'BASELINE']
     );
     
-    const token = jwt.sign({ playerId: result.rows[0].id }, JWT_SECRET);
+    const token = require('jsonwebtoken').sign({ playerId: result.rows[0].id }, 'freight-empire-secret-key-change-in-production');
     res.json({ token });
   } catch (error) {
     console.error('Signup error:', error);
