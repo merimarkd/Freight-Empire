@@ -21,9 +21,21 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Email already in use' });
     }
     
+    // Generate unique username from email
+    let baseUsername = email.split('@')[0];
+    let username = baseUsername;
+    let counter = 1;
+    
+    while (true) {
+      const existingUsername = await pool.query('SELECT id FROM players WHERE username = $1', [username]);
+      if (existingUsername.rows.length === 0) break;
+      username = baseUsername + counter;
+      counter++;
+    }
+    
     const result = await pool.query(
-      'INSERT INTO players (email) VALUES ($1) RETURNING id',
-      [email]
+      'INSERT INTO players (username, email, personal_credit_score) VALUES ($1, $2, $3) RETURNING id',
+      [username, email, 650]
     );
     
     const token = require('jsonwebtoken').sign({ playerId: result.rows[0].id }, 'freight-empire-secret-key-change-in-production');
