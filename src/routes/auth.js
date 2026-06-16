@@ -84,8 +84,6 @@ function generateMCNumber() {
 }
 
 // Create company + player on first login
-
-// Create company + player on first login
 router.post('/create-company', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -113,9 +111,9 @@ router.post('/create-company', async (req, res) => {
     }
     
     const companyResult = await pool.query(
-      'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash, hq_city, hq_latitude, hq_longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [name, null, null, ownerId, 500000, hqCity || null, hqLatitude || null, hqLongitude || null]
-    );
+  'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+  [name, null, null, ownerId, 500000]
+);
     
     const company = companyResult.rows[0];
     
