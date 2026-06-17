@@ -253,14 +253,109 @@
       <td>${p.deletion_reason}</td>
       <td>${new Date(p.deleted_at).toLocaleDateString()}</td>
       <td>${new Date(p.auto_purge_at).toLocaleDateString()}</td>
-      <td><button onclick="viewDeletedPlayer('${p.id}')" style="padding: 5px 10px; font-size: 0.8rem;">View</button></td>
+      <td><button onclick="viewDeletedPlayer('${p.id}', '${p.username}')" style="padding: 5px 10px; background: rgba(88, 166, 255, 0.1); color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.3); font-size: 0.8rem; cursor: pointer; border-radius: 2px;">View</button></td>
     </tr>
   `).join('');
   document.getElementById('deletedTable').innerHTML = html || '<tr><td colspan="6">No deleted players</td></tr>';
 }
 
-function viewDeletedPlayer(id) {
-  alert('Deleted player details:\nID: ' + id + '\n\n(Profile details coming soon)');
+function viewDeletedPlayer(id, username) {
+  openDeletedPlayerModal(id, username);
+}
+
+function openDeletedPlayerModal(playerId, username) {
+  const modal = document.createElement('div');
+  modal.id = 'viewDeletedPlayerModal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  modal.innerHTML = `
+    <div style="
+      background: #0d1117;
+      border: 2px solid #58a6ff;
+      border-radius: 4px;
+      padding: 30px;
+      width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+    ">
+      <h2 style="color: #58a6ff; margin: 0 0 20px 0; font-size: 1.4rem;">Deleted Player Profile</h2>
+      <div id="deletedPlayerContent" style="color: #c9d1d9; line-height: 1.8;">
+        <div class="loading">Loading...</div>
+      </div>
+      <button onclick="closeDeletedPlayerModal()" style="
+        margin-top: 20px;
+        width: 100%;
+        padding: 10px;
+        background: rgba(88, 166, 255, 0.1);
+        color: #58a6ff;
+        border: 1px solid rgba(88, 166, 255, 0.3);
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      ">Close</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.onclick = (e) => {
+    if (e.target === modal) closeDeletedPlayerModal();
+  };
+  
+  loadDeletedPlayerDetails(playerId);
+}
+
+function closeDeletedPlayerModal() {
+  const modal = document.getElementById('viewDeletedPlayerModal');
+  if (modal) modal.remove();
+}
+
+async function loadDeletedPlayerDetails(playerId) {
+  try {
+    const res = await fetch(API + '/api/game/admin/deleted-players/' + playerId);
+    const data = await res.json();
+    
+    if (res.ok) {
+      const player = data.player;
+      const html = `
+        <div style="margin-bottom: 15px; padding: 10px; background: rgba(88, 166, 255, 0.1); border-left: 3px solid #58a6ff; border-radius: 2px;">
+          <strong>Username:</strong> ${player.username}<br>
+          <strong>Email:</strong> ${player.email}
+        </div>
+        <div style="margin-bottom: 15px;">
+          <strong>Credit Score:</strong> ${player.personal_credit_score}<br>
+          <strong>Account Created:</strong> ${new Date(player.created_at).toLocaleString()}<br>
+          <strong>Deletion Reason:</strong> <span style="color: #f85149;">${player.deletion_reason}</span><br>
+          <strong>Deleted:</strong> ${new Date(player.deleted_at).toLocaleString()}<br>
+          <strong>Auto-Purge:</strong> ${new Date(player.auto_purge_at).toLocaleString()}
+        </div>
+        <div style="margin-bottom: 15px; padding: 10px; background: rgba(248, 81, 73, 0.1); border-radius: 2px; border-left: 3px solid #f85149;">
+          <strong>Admin Notes:</strong><br>
+          ${player.deletion_notes || '<em style="opacity: 0.6;">None</em>'}
+        </div>
+        <div style="margin-bottom: 15px; padding: 10px; background: rgba(88, 166, 255, 0.05); border-radius: 2px;">
+          <strong>System:</strong> ${data.orphanedCompaniesCount} orphaned companies exist in system
+        </div>
+      `;
+      document.getElementById('deletedPlayerContent').innerHTML = html;
+    } else {
+      document.getElementById('deletedPlayerContent').innerHTML = '<span style="color: #f85149;">Error loading player details: ' + data.error + '</span>';
+    }
+  } catch (error) {
+    console.error(error);
+    document.getElementById('deletedPlayerContent').innerHTML = '<span style="color: #f85149;">Error: ' + error.message + '</span>';
+  }
 }
 
 async function deleteCompany(companyId) {
