@@ -340,4 +340,22 @@ router.delete('/company/:companyId', async (req, res) => {
   }
 });
 
+// Admin: Reset all data (DANGEROUS - development only)
+router.post('/admin/reset-all', async (req, res) => {
+  try {
+    // Delete in correct order
+    await pool.query('DELETE FROM company_auctions');
+    await pool.query('DELETE FROM loans');
+    await pool.query('DELETE FROM company_statistics');
+    await pool.query('DELETE FROM trucks');
+    await pool.query('DELETE FROM drivers');
+    await pool.query('DELETE FROM companies');
+    await pool.query('DELETE FROM players');
+    
+    res.json({ success: true, message: 'All data deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
