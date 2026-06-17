@@ -33,6 +33,58 @@ function initializeScheduler() {
   cron.schedule('0 2 * * *', checkCompliance, { name: 'checkCompliance' });
   console.log('  ✓ Compliance checks: Daily 02:00 UTC');
 
+  // Auto-delete inactive players (30+ days no login)
+cron.schedule('0 3 * * *', async () => {
+  console.log('Running: Auto-delete inactive players...');
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const inactivePlayers = await pool.query(
+      'SELECT id, username, email, personal_credit_score FROM players WHERE last_login < $1 AND is_admin = FALSE',
+      [thirtyDaysAgo]
+    );
+
+    for (const player of inactivePlayers.rows) {
+      // Move to deletion history
+      await pool.query(`
+        INSERT INTO deleted_players_history (username, email, personal_credit_score, deletion_reason, deletion_notes, auto_purge_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        player.username,
+        player.email,
+        player.personal_credit_score,
+        'inactivity',
+        'Auto-deleted due to 30+ days inactivity',
+        new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000) // 6 months from now
+      ]);
+
+      // Delete player
+      await pool.query('DELETE FROM players WHERE id = $1', [player.id]);
+    }
+
+    if (inactivePlayers.rows.length > 0) {
+      console.log(`✓ Deleted ${inactivePlayers.rows.length} inactive players`);
+    }
+  } catch (error) {
+    console.error('Auto-delete error:', error);
+  }
+});
+
+// Auto-purge deleted player records older than 6 months
+cron.schedule('0 4 * * *', async () => {
+  console.log('Running: Purge old deleted player records...');
+  try {
+    const result = await pool.query(
+      'DELETE FROM deleted_players_history WHERE auto_purge_at < NOW()'
+    );
+    if (result.rowCount > 0) {
+      console.log(`✓ Purged ${result.rowCount} old deleted player records`);
+    }
+  } catch (error) {
+    console.error('Purge error:', error);
+  }
+});
+
   console.log('✅ Tick scheduler initialized');
 }
 

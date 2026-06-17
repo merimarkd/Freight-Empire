@@ -9,6 +9,30 @@ async function runMigrations() {
     `);
     console.log('✓ Migration: Added is_admin column to players');
 
+    // Add last_login to players
+    await pool.query(`
+      ALTER TABLE players 
+      ADD COLUMN IF NOT EXISTS last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+    console.log('✓ Migration: Added last_login to players');
+
+    // Create deleted_players_history table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS deleted_players_history (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username VARCHAR(255),
+        email VARCHAR(255),
+        personal_credit_score INT,
+        deletion_reason VARCHAR(50),
+        deleted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        deleted_by_admin_id UUID,
+        deletion_notes TEXT,
+        auto_purge_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Migration: Created deleted_players_history table');
+
     // Create banned_players table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS banned_players (
