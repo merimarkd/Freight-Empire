@@ -219,7 +219,7 @@
   const html = companies.map(c => `
     <tr>
       <td><a href="#" onclick="viewCompany('${c.id}'); return false;" style="color: #58a6ff; text-decoration: none; cursor: pointer;">${c.name}</a></td>
-      <td>${c.owner_name} (${c.owner_id.substring(0, 8)})</td>
+      <td>${c.owner_id ? c.owner_id.substring(0, 8) : 'Orphaned'}</td>
       <td>${c.truck_count}</td>
       <td>${c.driver_count}</td>
       <td>${c.active_loans}</td>

@@ -127,8 +127,7 @@ await pool.query(`
   ALTER TABLE companies
   ADD COLUMN IF NOT EXISTS previous_owner_id UUID
 `);
-
-console.log('✓ Migration: Made companies.owner_id nullable');
+console.log('✓ Migration: Added previous_owner_id to companies');
 
   } catch (error) {
     if (error.message.includes('already exists')) {
