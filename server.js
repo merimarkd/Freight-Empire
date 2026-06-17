@@ -4,6 +4,7 @@ const cors = require('cors');
 const { createServer } = require('http');
 const { Server: SocketIOServer } = require('socket.io');
 const path = require('path');
+const { runMigrations } = require('./src/db/migrations');
 
 // Import modules
 const { initDatabase, pool } = require('./src/db/connection');
@@ -85,7 +86,7 @@ const PORT = process.env.PORT || 5000;
   try {
     await initDatabase();
     console.log('✓ Database initialized');
-
+    await runMigrations();
 // Tick engine - updates company statistics every 1 second
 const startTickEngine = async () => {
   setInterval(async () => {
