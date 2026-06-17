@@ -316,4 +316,22 @@ router.get('/admin/players', async (req, res) => {
   }
 });
 
+// Get current player from JWT token
+router.get('/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing token' });
+    }
+    
+    const token = authHeader.substring(7);
+    const decoded = require('jsonwebtoken').verify(token, 'freight-empire-secret-key-change-in-production');
+    const result = await pool.query('SELECT id, username, email, personal_credit_score, current_company_id FROM players WHERE id = $1', [decoded.playerId]);
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 module.exports = router;

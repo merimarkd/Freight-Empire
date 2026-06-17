@@ -100,9 +100,12 @@
   async function loadDashboard() {
     try {
       // Get player info to find company ID
-      const playerRes = await fetch(API + '/api/auth/admin/players');
-      const players = await playerRes.json();
-      const currentPlayer = players.find(p => p.username === 'bobandtom'); // This is hardcoded for now
+      const playerRes = await fetch(API + '/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+   });
+   const currentPlayer = await playerRes.json();
+      
+     
       
       if (!currentPlayer || !currentPlayer.current_company_id) {
         document.body.innerHTML = '<p style="padding: 20px; color: red;">No company found</p>';
