@@ -287,10 +287,121 @@ async function deleteCompany(companyId) {
 }
 
 async function deletePlayer(playerId, username) {
-  const reason = prompt('Delete player ' + username + '?\nReason (inactivity/violation/other):');
-  if (!reason) return;
+  openDeletePlayerModal(playerId, username);
+}
+
+function openDeletePlayerModal(playerId, username) {
+  const modal = document.createElement('div');
+  modal.id = 'deletePlayerModal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
   
-  const notes = prompt('Admin notes:');
+  modal.innerHTML = `
+    <div style="
+      background: #0d1117;
+      border: 2px solid #58a6ff;
+      border-radius: 4px;
+      padding: 30px;
+      width: 400px;
+      box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+    ">
+      <h2 style="color: #58a6ff; margin: 0 0 20px 0; font-size: 1.4rem;">Delete Player</h2>
+      <p style="color: #c9d1d9; margin-bottom: 20px;">Are you sure you want to delete <strong>${username}</strong>?</p>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="color: #c9d1d9; display: block; margin-bottom: 5px; font-weight: bold;">Reason:</label>
+        <select id="deleteReason" style="
+          width: 100%;
+          padding: 8px;
+          background: #161b22;
+          color: #c9d1d9;
+          border: 1px solid rgba(88, 166, 255, 0.3);
+          border-radius: 4px;
+        ">
+          <option value="">-- Select Reason --</option>
+          <option value="inactivity">Inactivity (30+ days)</option>
+          <option value="violation">Policy Violation</option>
+          <option value="fraud">Fraud/Exploit</option>
+          <option value="request">Player Request</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="color: #c9d1d9; display: block; margin-bottom: 5px; font-weight: bold;">Notes (optional):</label>
+        <textarea id="deleteNotes" placeholder="Admin notes..." style="
+          width: 100%;
+          padding: 8px;
+          background: #161b22;
+          color: #c9d1d9;
+          border: 1px solid rgba(88, 166, 255, 0.3);
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 0.9rem;
+          resize: vertical;
+          height: 80px;
+          box-sizing: border-box;
+        "></textarea>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="confirmDeletePlayer('${playerId}')" style="
+          flex: 1;
+          padding: 10px;
+          background: rgba(248, 81, 73, 0.2);
+          color: #f85149;
+          border: 1px solid rgba(248, 81, 73, 0.4);
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 0.9rem;
+        ">Confirm Delete</button>
+        <button onclick="closeDeletePlayerModal()" style="
+          flex: 1;
+          padding: 10px;
+          background: rgba(88, 166, 255, 0.1);
+          color: #58a6ff;
+          border: 1px solid rgba(88, 166, 255, 0.3);
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 0.9rem;
+        ">Cancel</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.onclick = (e) => {
+    if (e.target === modal) closeDeletePlayerModal();
+  };
+}
+
+function closeDeletePlayerModal() {
+  const modal = document.getElementById('deletePlayerModal');
+  if (modal) modal.remove();
+}
+
+async function confirmDeletePlayer(playerId) {
+  const reason = document.getElementById('deleteReason').value;
+  const notes = document.getElementById('deleteNotes').value;
+  
+  if (!reason) {
+    alert('Please select a reason');
+    return;
+  }
+  
+  closeDeletePlayerModal();
   
   try {
     const res = await fetch(API + '/api/game/admin/delete-player', {
@@ -298,16 +409,32 @@ async function deletePlayer(playerId, username) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerId, reason, notes })
     });
-    
+
     if (res.ok) {
-      alert('Player deleted! Companies auctioned, email banned.');
+      const msg = document.createElement('div');
+      msg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(88, 166, 255, 0.2);
+        border: 1px solid #58a6ff;
+        color: #58a6ff;
+        padding: 15px 20px;
+        border-radius: 4px;
+        z-index: 10001;
+      `;
+      msg.textContent = '✓ Player deleted, companies auctioned, email banned';
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 3000);
       loadPlayers();
       loadDeletedPlayers();
     } else {
-      alert('Error deleting player');
+      const error = await res.json();
+      alert('Error: ' + error.error);
     }
   } catch (error) {
     console.error(error);
+    alert('Error deleting player: ' + error.message);
   }
 }
 
