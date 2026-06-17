@@ -31,9 +31,10 @@
   <h1>FREIGHT EMPIRE - Admin Panel</h1>
   
   <div class="tabs">
-    <button class="tab active" onclick="switchTab(event, 'overview')">Overview</button>
-    <button class="tab" onclick="switchTab(event, 'companies')">Companies</button>
-    <button class="tab" onclick="switchTab(event, 'players')">Players</button>
+  <button class="tab active" onclick="switchTab(event, 'overview')">Overview</button>
+  <button class="tab" onclick="switchTab(event, 'companies')">Companies</button>
+  <button class="tab" onclick="switchTab(event, 'players')">Players</button>
+  <button class="tab" onclick="switchTab(event, 'deleted')">Deleted Players</button>
   </div>
 
   <!-- OVERVIEW -->
@@ -87,6 +88,36 @@
     </table>
   </div>
 </div>
+  
+   <!-- PLAYERS -->
+  <div class="tab-content" id="players">
+    <div class="search">
+      <input type="text" id="playerSearch" placeholder="Search username or email..." onkeyup="filterPlayers()">
+    </div>
+    <table>
+      ...table content...
+    </table>
+  </div>
+
+  <!-- DELETED PLAYERS --> 
+  <div class="tab-content" id="deleted">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Reason</th>
+          <th>Deleted</th>
+          <th>Purge Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="deletedTable">
+        <tr><td colspan="6" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>   
 
 <script>
   const API = 'http://143.198.176.234:5000';
@@ -94,10 +125,11 @@
   let allPlayers = [];
 
   window.addEventListener('load', () => {
-    loadStats();
-    loadCompanies();
-    loadPlayers();
-  });
+  loadStats();
+  loadCompanies();
+  loadPlayers();
+  loadDeletedPlayers();
+});
 
   function switchTab(e, tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -153,6 +185,16 @@
       const res = await fetch(API + '/api/auth/admin/players');
       allPlayers = await res.json();
       renderPlayers(allPlayers);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadDeletedPlayers() {
+    try {
+      const res = await fetch(API + '/api/game/admin/deleted-players');
+      const deletedPlayers = await res.json();
+      renderDeletedPlayers(deletedPlayers);
     } catch (e) {
       console.error(e);
     }
