@@ -177,7 +177,7 @@
     const html = companies.map(c => `
       <tr>
         <td>${c.name}</td>
-        <td>${c.owner_id.substring(0, 8)}</td>
+        <td>${c.owner_name} (${c.owner_id.substring(0, 8)})</td>
         <td>${c.truck_count}</td>
         <td>${c.driver_count}</td>
         <td>${c.active_loans}</td>
@@ -194,7 +194,7 @@
         <td>${p.username}</td>
         <td>${p.email}</td>
         <td>${p.personal_credit_score}</td>
-        <td>${p.current_company_id ? p.current_company_id.substring(0, 8) : 'None'}</td>
+        <td>${p.company_name ? p.company_name + ' (' + p.current_company_id.substring(0, 8) + ')' : 'None'}</td>
         <td>${new Date(p.created_at).toLocaleDateString()}</td>
       </tr>
     `).join('');

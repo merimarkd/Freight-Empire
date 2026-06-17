@@ -309,7 +309,14 @@ router.get('/search-cities', async (req, res) => {
 // Admin: Get all players
 router.get('/admin/players', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, username, email, personal_credit_score, current_company_id, created_at FROM players ORDER BY created_at DESC');
+    const result = await pool.query(`
+      SELECT 
+        p.id, p.username, p.email, p.personal_credit_score, p.current_company_id, p.created_at,
+        c.name as company_name
+      FROM players p
+      LEFT JOIN companies c ON p.current_company_id = c.id
+      ORDER BY p.created_at DESC
+    `);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });

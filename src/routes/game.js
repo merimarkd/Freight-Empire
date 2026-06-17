@@ -217,17 +217,18 @@ router.get('/loads/:companyId', async (req, res) => {
   }
 });
 
-// Admin: Get all companies
 // Admin: Get all companies with metrics
 router.get('/admin/companies', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
         c.id, c.name, c.dot_number, c.owner_id, c.cash, c.created_at,
+        p.username as owner_name,
         (SELECT COUNT(*) FROM trucks WHERE company_id = c.id) as truck_count,
         (SELECT COUNT(*) FROM drivers WHERE company_id = c.id) as driver_count,
         (SELECT COUNT(*) FROM loans WHERE company_id = c.id AND status != 'paid_off') as active_loans
       FROM companies c
+      LEFT JOIN players p ON c.owner_id = p.id
       ORDER BY c.created_at DESC
     `);
     res.json(result.rows);
