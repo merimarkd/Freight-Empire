@@ -59,6 +59,13 @@ async function runMigrations() {
     `);
     console.log('✓ Migration: Created company_auctions table');
 
+    // Add auto_pay_enabled to loans
+    await pool.query(`
+      ALTER TABLE loans 
+      ADD COLUMN IF NOT EXISTS auto_pay_enabled BOOLEAN DEFAULT TRUE
+    `);
+    console.log('✓ Migration: Added auto_pay_enabled to loans');
+
   } catch (error) {
     if (error.message.includes('already exists')) {
       console.log('✓ Tables already exist');
