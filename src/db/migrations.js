@@ -44,26 +44,77 @@ async function runMigrations() {
     `);
     console.log('✓ Migration: Created banned_players table');
 
-    // Create company_auctions table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS company_auctions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        company_id UUID NOT NULL,
-        company_name VARCHAR(255),
-        original_owner_id UUID,
-        starting_price DECIMAL(15, 2),
-        current_price DECIMAL(15, 2),
-        status VARCHAR(50) DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('✓ Migration: Created company_auctions table');
+    // Create loans table
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS loans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id),
+    principal DECIMAL(15, 2) NOT NULL,
+    balance_remaining DECIMAL(15, 2) NOT NULL,
+    interest_rate DECIMAL(5, 2) NOT NULL,
+    monthly_payment DECIMAL(15, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    originated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    maturity_date TIMESTAMP,
+    next_payment_due TIMESTAMP,
+    last_payment_date TIMESTAMP,
+    total_payments_made INT DEFAULT 0,
+    total_interest_paid DECIMAL(15, 2) DEFAULT 0,
+    days_past_due INT DEFAULT 0,
+    payments_missed INT DEFAULT 0,
+    auto_pay_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+console.log('✓ Migration: Created loans table');
 
-    // Add auto_pay_enabled to loans
-    await pool.query(`
-      ALTER TABLE loans 
-      ADD COLUMN IF NOT EXISTS auto_pay_enabled BOOLEAN DEFAULT TRUE
-    `);
+// Create loan_payments table
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS loan_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    loan_id UUID NOT NULL REFERENCES loans(id),
+    company_id UUID NOT NULL REFERENCES companies(id),
+    amount DECIMAL(15, 2) NOT NULL,
+    principal_portion DECIMAL(15, 2),
+    interest_portion DECIMAL(15, 2),
+    payment_status VARCHAR(50),
+    due_date TIMESTAMP,
+    payment_date TIMESTAMP,
+    days_late INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+console.log('✓ Migration: Created loan_payments table');
+
+// Create transactions table
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id),
+    transaction_type VARCHAR(100),
+    amount DECIMAL(15, 2),
+    loan_id UUID REFERENCES loans(id),
+    description TEXT,
+    status VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+console.log('✓ Migration: Created transactions table');
+
+// Create compliance_strikes table
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS compliance_strikes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id),
+    strike_number INT,
+    reason VARCHAR(255),
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    lockout_until TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+console.log('✓ Migration: Created compliance_strikes table');
     console.log('✓ Migration: Added auto_pay_enabled to loans');
 
   } catch (error) {

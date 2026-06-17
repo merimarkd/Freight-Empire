@@ -400,11 +400,12 @@ router.post('/admin/delete-player', async (req, res) => {
     if (playerRes.rows.length === 0) {
       return res.status(404).json({ error: 'Player not found' });
     }
-    
     const player = playerRes.rows[0];
     
-    // Move player's companies to auction (50% value)
+    // Step 1: Get all companies owned by this player
     const companiesRes = await pool.query('SELECT * FROM companies WHERE owner_id = $1', [playerId]);
+    
+    // Step 2: Move each company to auction at 50% value
     for (const company of companiesRes.rows) {
       const auctionPrice = parseFloat(company.cash) * 0.5;
       await pool.query(`
@@ -413,20 +414,26 @@ router.post('/admin/delete-player', async (req, res) => {
       `, [company.id, company.name, playerId, auctionPrice, auctionPrice]);
     }
     
-    // Archive to deleted players history
+    // Step 3: DELETE companies from companies table (after auction is set up)
+    await pool.query('DELETE FROM companies WHERE owner_id = $1', [playerId]);
+    
+    // Step 4: Clear player's current_company_id to avoid FK constraint
+    await pool.query('UPDATE players SET current_company_id = NULL WHERE id = $1', [playerId]);
+    
+    // Step 5: Archive to deleted players history
     const purgeDate = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000); // 6 months
     await pool.query(`
       INSERT INTO deleted_players_history (username, email, personal_credit_score, deletion_reason, deletion_notes, auto_purge_at)
       VALUES ($1, $2, $3, $4, $5, $6)
     `, [player.username, player.email, player.personal_credit_score, reason, notes, purgeDate]);
     
-    // Add to banned list to prevent re-registration
+    // Step 6: Add to banned list to prevent re-registration
     await pool.query(`
       INSERT INTO banned_players (email, reason)
       VALUES ($1, $2)
     `, [player.email, notes]);
     
-    // Delete player
+    // Step 7: Delete player
     await pool.query('DELETE FROM players WHERE id = $1', [playerId]);
     
     res.json({ success: true, message: 'Player deleted, companies auctioned, email banned' });
