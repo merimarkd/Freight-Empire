@@ -322,6 +322,26 @@ router.get('/company/:companyId', async (req, res) => {
   }
 });
 
+// Get HQ data for player dashboard
+router.get('/hq/:companyId', async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    
+    const companyRes = await pool.query(
+      'SELECT c.id, c.name, c.hq_state, p.username FROM companies c LEFT JOIN players p ON c.owner_id = p.id WHERE c.id = $1',
+      [companyId]
+    );
+    
+    if (companyRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    
+    res.json(companyRes.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete company
 router.delete('/company/:companyId', async (req, res) => {
   try {
