@@ -371,6 +371,10 @@ res.json({
   cash: parseInt(cash) || 0,
   totalDrivers: parseInt(drivers.total) || 0,
   activeDrivers: 0
+  } catch (error) {
+    console.error('Error in company-stats:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Delete company
