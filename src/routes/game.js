@@ -357,22 +357,23 @@ router.get('/company-stats/:companyId', async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
     
-    const cash = companyRes.rows[0].cash;
+    const cash = companyRes.rows[0].cash || 0;
     
     // Get driver counts
     const driverRes = await pool.query(
-      'SELECT COUNT(*) as total, SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active FROM drivers WHERE company_id = $1',
+      'SELECT COUNT(*)::INT as total, COALESCE(SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END), 0)::INT as active FROM drivers WHERE company_id = $1',
       [companyId]
     );
     
-    const drivers = driverRes.rows[0];
+    const drivers = driverRes.rows[0] || { total: 0, active: 0 };
     
     res.json({
-      cash: cash || 0,
+      cash: parseInt(cash) || 0,
       totalDrivers: parseInt(drivers.total) || 0,
       activeDrivers: parseInt(drivers.active) || 0
     });
   } catch (error) {
+    console.error('Error in company-stats:', error);
     res.status(500).json({ error: error.message });
   }
 });
