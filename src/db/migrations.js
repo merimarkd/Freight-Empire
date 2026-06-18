@@ -136,6 +136,19 @@ await pool.query(`
 `);
 console.log('✓ Migration: Added hq_state to companies');
 
+// Create drivers table
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS drivers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+  )
+`);
+console.log('✓ Migration: Created drivers table');
+
   } catch (error) {
     if (error.message.includes('already exists')) {
       console.log('✓ Tables already exist');

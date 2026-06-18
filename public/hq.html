@@ -62,6 +62,58 @@
 const API = 'http://143.198.176.234:5000';
 let companyData = null;
 let playerName = '';
+const stateToTimezone = {
+  'AK': 'America/Anchorage',
+  'HI': 'Pacific/Honolulu',
+  'CA': 'America/Los_Angeles',
+  'NV': 'America/Los_Angeles',
+  'OR': 'America/Los_Angeles',
+  'WA': 'America/Los_Angeles',
+  'CO': 'America/Denver',
+  'MT': 'America/Denver',
+  'NM': 'America/Denver',
+  'UT': 'America/Denver',
+  'WY': 'America/Denver',
+  'ID': 'America/Boise',
+  'TX': 'America/Chicago',
+  'OK': 'America/Chicago',
+  'KS': 'America/Chicago',
+  'NE': 'America/Chicago',
+  'SD': 'America/Chicago',
+  'ND': 'America/Chicago',
+  'MN': 'America/Chicago',
+  'IA': 'America/Chicago',
+  'MO': 'America/Chicago',
+  'AR': 'America/Chicago',
+  'LA': 'America/Chicago',
+  'WI': 'America/Chicago',
+  'IL': 'America/Chicago',
+  'MI': 'America/Chicago',
+  'IN': 'America/Indiana/Indianapolis',
+  'OH': 'America/New_York',
+  'KY': 'America/Kentucky/Louisville',
+  'TN': 'America/Chicago',
+  'MS': 'America/Chicago',
+  'AL': 'America/Chicago',
+  'GA': 'America/New_York',
+  'FL': 'America/New_York',
+  'SC': 'America/New_York',
+  'NC': 'America/New_York',
+  'VA': 'America/New_York',
+  'WV': 'America/New_York',
+  'PA': 'America/New_York',
+  'NY': 'America/New_York',
+  'NJ': 'America/New_York',
+  'CT': 'America/New_York',
+  'RI': 'America/New_York',
+  'MA': 'America/New_York',
+  'VT': 'America/New_York',
+  'NH': 'America/New_York',
+  'ME': 'America/New_York',
+  'MD': 'America/New_York',
+  'DE': 'America/New_York',
+  'AZ': 'America/Phoenix'
+};
 
 window.addEventListener('load', () => {
   loadHQData();
@@ -221,6 +273,40 @@ function openDepartmentWindow(departmentName, departmentId) {
   makeResizable(window);
   document.body.appendChild(window);
   
+  // Load real company data
+  loadCompanyStats();
+  
+  // Update time every second
+  setInterval(() => updateOpsTime(), 1000);
+}
+
+async function loadCompanyStats() {
+  try {
+    const response = await fetch(API + '/api/game/company-stats/' + companyData.id);
+    const stats = await response.json();
+    
+    document.getElementById('opsBalance').textContent = stats.cash.toLocaleString();
+    document.getElementById('opsDrivers').textContent = stats.totalDrivers;
+    document.getElementById('opsActiveDrivers').textContent = stats.activeDrivers;
+  } catch (error) {
+    console.error('Error loading company stats:', error);
+  }
+}
+
+function updateOpsTime() {
+  const timezone = stateToTimezone[companyData.hq_state] || 'America/New_York';
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone
+  });
+  
+  const timeEl = document.getElementById('opsTime');
+  if (timeEl) {
+    timeEl.textContent = formatter.format(now);
+  }
 }
 
 function openTabWindow(tabId, tabName) {
