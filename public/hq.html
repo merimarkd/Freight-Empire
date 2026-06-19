@@ -10,9 +10,13 @@
     .hq-header { background: rgba(13, 17, 23, 0.9); border-bottom: 2px solid rgba(88, 166, 255, 0.3); padding: 15px; display: flex; justify-content: space-between; align-items: center; }
     .hq-title { text-align: center; flex: 1; font-size: 1.5rem; color: #58a6ff; font-weight: bold; }
     .hq-time { color: #8b949e; font-size: 1rem; font-family: monospace; }
-    .hq-content { flex: 1; position: relative; overflow: hidden; background: #0d1117; display: flex; align-items: center; justify-content: center; }
-    .hq-image { max-width: 100%; max-height: 100%; object-fit: contain; background: #0d1117; }
-    .hq-svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: default; }
+    .hq-content { flex: 1; position: relative; overflow: hidden; background: #0a1628; }
+    .hq-animated-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 20% 50%, rgba(13, 60, 80, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(13, 60, 80, 0.05) 0%, transparent 50%); overflow: hidden; filter: }
+    .particle { position: absolute; width: 4px; height: 4px; background: #00d4ff; border-radius: 50%; box-shadow: 0 0 10px #00d4ff, 0 0 20px rgba(0, 212, 255, 0.5); animation: float 20s infinite; }
+    .particle::before { content: ''; position: absolute; top: -2px; left: -2px; width: 8px; height: 8px; border: 1px solid rgba(0, 212, 255, 0.4); border-radius: 50%; animation: pulse 3s infinite; }
+    @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; } 50% { transform: translate(var(--tx), var(--ty)) scale(1.2); opacity: 1; } }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.5); } 50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.8); } }
+    .hq-svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: default; z-index: 2; }
     .hotspot { cursor: pointer; transition: all 0.2s ease; }
     .hotspot:hover { filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.6)); }
     .hotspot-rect { fill: transparent; stroke: transparent; stroke-width: 2; }
@@ -61,14 +65,18 @@
   </style>
 </head>
 <body>
+<body>
 <div class="hq-container">
   <div class="hq-header">
-    <div style="width: 200px;"></div>
-    <div class="hq-title" id="companyName">Loading...</div>
-    <div class="hq-time" id="currentTime">00:00</div>
+    <button class="hq-dashboard-btn" onclick="openDepartmentWindow()">📊 DASHBOARD</button>
+    <div class="hq-title">FREIGHT EMPIRE</div>
+    <div class="hq-stats">
+      <span id="headerPlayersOnline">Players: 0</span>
+      <span id="headerTime">00:00</span>
+    </div>
   </div>
   <div class="hq-content">
-    <img id="hqImage" class="hq-image" src="" alt="HQ Office">
+    <div class="hq-animated-bg"></div>
     <svg class="hq-svg-overlay" id="hotspotSvg"></svg>
   </div>
 </div>
@@ -152,9 +160,9 @@ async function loadHQData() {
     companyData = await companyRes.json();
     
     document.getElementById('companyName').textContent = companyData.name;
-    document.getElementById('hqImage').src = '/dreamstime_xxl_33475551.jpg';
     
     setupHotspots();
+    createParticleNetwork();
   } catch (error) {
     console.error('Error loading HQ data:', error);
   }
@@ -212,6 +220,90 @@ function openDepartmentMenu(event) {
 function closeDepartmentMenu() {
   const menu = document.getElementById('departmentMenu');
   if (menu) menu.remove();
+}
+
+function createParticleNetwork() {
+  const bg = document.querySelector('.hq-animated-bg');
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'absolute';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.zIndex = '1';
+  bg.appendChild(canvas);
+  
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  
+  const particles = [];
+  const particleCount = 200;
+  
+  // Create particles
+  for (let i = 0; i < particleCount; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: (Math.random() - 0.5) * 0.5,
+    size: Math.random() * 3 + 1,
+    canConnect: Math.random() < 0.2
+  });
+}
+  
+  function draw() {
+    ctx.fillStyle = 'rgba(10, 22, 40, 1.0)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Update and draw particles
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      
+      ctx.fillStyle = '#00d4ff';
+      ctx.shadowColor = '#00d4ff';
+      ctx.shadowBlur = 30;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    // Draw connecting lines
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = 'rgba(0, 212, 255, 0.5)';
+    ctx.shadowBlur = 10;
+    
+  for (let i = 0; i < particles.length; i++) {
+     if (!particles[i].canConnect) continue;
+  
+     for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 250) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    
+    requestAnimationFrame(draw);
+  }
+  
+  window.addEventListener('resize', () => {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  });
+  
+  draw();
 }
 
 function openDepartmentWindow(departmentName, departmentId) {
