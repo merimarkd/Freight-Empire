@@ -7,7 +7,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Arial', sans-serif; background: #0d1117; color: #c9d1d9; overflow: hidden; }
     .hq-container { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; }
-    .hq-header { background: rgba(13, 17, 23, 0.9); border-bottom: 2px solid rgba(88, 166, 255, 0.3); padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .hq-header { background: rgba(13, 17, 23, 0.9); border-bottom: 2px solid rgba(88, 166, 255, 0.3); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
     .hq-title { text-align: center; flex: 1; font-size: 1.5rem; color: #58a6ff; font-weight: bold; }
     .hq-dashboard-btn { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.4); color: #58a6ff; padding: 8px 15px; border-radius: 2px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: all 0.2s ease; }
     .hq-dashboard-btn:hover { background: rgba(88, 166, 255, 0.2); border-color: #58a6ff; }
@@ -23,7 +23,7 @@
     .particle::before { content: ''; position: absolute; top: -2px; left: -2px; width: 8px; height: 8px; border: 1px solid rgba(0, 212, 255, 0.4); border-radius: 50%; animation: pulse 3s infinite; }
     @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; } 50% { transform: translate(var(--tx), var(--ty)) scale(1.2); opacity: 1; } }
     @keyframes pulse { 0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.5); } 50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.8); } }
-    .hq-svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: default; z-index: 2; }
+    .hq-svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: default; z-index: 0; }
     .hotspot { cursor: pointer; transition: all 0.2s ease; }
     .hotspot:hover { filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.6)); }
     .hotspot-rect { fill: transparent; stroke: transparent; stroke-width: 2; }
@@ -75,13 +75,14 @@
 <body>
 <div class="hq-container">
   <div class="hq-header">
-    <button class="hq-dashboard-btn" onclick="openDepartmentWindow()">📊 DASHBOARD</button>
-    <div class="hq-title">FREIGHT EMPIRE</div>
-    <div class="hq-stats">
-  <span id="headerPlayersOnline">Players: 0</span>
-  <span id="headerTime">00:00</span>
-  <button class="anim-toggle" id="animToggle" title="Toggle Background Animation">ANIMATION</button>
+  <button class="hq-dashboard-btn" onclick="openDepartmentWindow()">📊 DASHBOARD</button>
+  <div class="hq-title">FREIGHT EMPIRE</div>
+  <div class="hq-stats">
+    <span id="headerPlayersOnline">Players Online: 0</span>
+    <span id="headerTime">00:00</span>
+    <button class="anim-toggle" id="animToggle" onclick="toggleAnimation()" title="Toggle Background Animation">ANIMATION</button>
   </div>
+</div>
   <div class="hq-content">
     <div class="hq-animated-bg"></div>
     <svg class="hq-svg-overlay" id="hotspotSvg"></svg>
@@ -238,61 +239,46 @@ function createParticleNetwork() {
   canvas.style.left = '0';
   canvas.style.width = '100%';
   canvas.style.height = '100%';
-  canvas.style.zIndex = '1';
+  canvas.style.zIndex = '2';
   bg.appendChild(canvas);
   
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight - 60;  // Subtract header height
+  canvas.height = window.innerHeight - 60;
   
   const particles = [];
   const particleCount = 200;
   
-  // Create particles
-for (let i = 0; i < particleCount; i++) {
-  particles.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    vx: (Math.random() - 0.5) * 0.5,
-    vy: (Math.random() - 0.5) * 0.5,
-    size: Math.random() * 3 + 1,
-    canConnect: Math.random() < 0.2
-  });
-}
-
-  draw();
-
-
-function toggleAnimation() {
-  const button = document.getElementById('animToggle');
-  animationEnabled = !animationEnabled;
-  button.classList.toggle('off', !animationEnabled);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const button = document.getElementById('animToggle');
-  if (button) {
-    button.addEventListener('click', toggleAnimation);
+  for (let i = 0; i < particleCount; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      size: Math.random() * 3 + 1,
+      canConnect: Math.random() < 0.2
+    });
   }
-});  
-
+  
   function draw() {
-    if (!animationEnabled) {
-    animationFrameId = requestAnimationFrame(draw);
-    return;
-  }
+    console.log('draw() called');
+    const canvas = document.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
 
+    if (!animationEnabled) {
+      animationFrameId = requestAnimationFrame(draw);
+      return;
+    }
+    
     ctx.fillStyle = 'rgba(10, 22, 40, 1.0)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Update and draw particles
+    console.log('Particles to draw:', particles.length);
     particles.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
-      
       if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
       if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-      
       ctx.fillStyle = '#00d4ff';
       ctx.shadowColor = '#00d4ff';
       ctx.shadowBlur = 30;
@@ -301,20 +287,17 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.fill();
     });
     
-    // Draw connecting lines
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.8)';
     ctx.lineWidth = 1.5;
     ctx.shadowColor = 'rgba(0, 212, 255, 0.5)';
     ctx.shadowBlur = 10;
     
-  for (let i = 0; i < particles.length; i++) {
-     if (!particles[i].canConnect) continue;
-  
-     for (let j = i + 1; j < particles.length; j++) {
+    for (let i = 0; i < particles.length; i++) {
+      if (!particles[i].canConnect) continue;
+      for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
         if (distance < 250) {
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
@@ -328,8 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   window.addEventListener('resize', () => {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 60;
   });
   
   draw();
