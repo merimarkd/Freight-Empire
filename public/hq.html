@@ -7,11 +7,11 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Arial', sans-serif; background: #0d1117; color: #c9d1d9; overflow: hidden; }
     .hq-container { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; }
-    .hq-header { background: rgba(13, 17, 23, 0.9); border-bottom: 2px solid rgba(88, 166, 255, 0.3); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .hq-header { background: rgba(13, 17, 23, 0.9); border-bottom: 2px solid rgba(88, 166, 255, 0.3); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2000; }
     .hq-title { text-align: center; flex: 1; font-size: 1.5rem; color: #58a6ff; font-weight: bold; }
     .hq-dashboard-btn { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.4); color: #58a6ff; padding: 8px 15px; border-radius: 2px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: all 0.2s ease; }
     .hq-dashboard-btn:hover { background: rgba(88, 166, 255, 0.2); border-color: #58a6ff; }
-    .anim-toggle { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.4); color: #58a6ff; padding: 5px 12px; border-radius: 2px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease; margin-left: 10px; }
+    .anim-toggle { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.4); color: #58a6ff; padding: 5px 12px; border-radius: 2px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease; margin-left: 10px; z-index: 2000; position: relative; }
     .anim-toggle:hover { background: rgba(88, 166, 255, 0.2); border-color: #58a6ff; }
     .anim-toggle.off { opacity: 0.4; color: #8b949e; }
     .hq-stats { display: flex; gap: 20px; align-items: center; color: #8b949e; font-size: 0.9rem; font-family: monospace; }
@@ -33,7 +33,7 @@
     .department-menu h3 { color: #58a6ff; margin-bottom: 15px; border-bottom: 1px solid rgba(88, 166, 255, 0.3); padding-bottom: 10px; }
     .department-item { padding: 10px; margin: 8px 0; background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 2px; cursor: pointer; transition: all 0.2s ease; color: #c9d1d9; }
     .department-item:hover { background: rgba(88, 166, 255, 0.2); border-color: #58a6ff; color: #58a6ff; }
-    .game-window { position: fixed; background: rgba(13, 17, 23, 0.95); border: 2px solid rgba(88, 166, 255, 0.5); border-radius: 4px; min-width: 400px; min-height: 300px; box-shadow: 0 0 30px rgba(88, 166, 255, 0.3); z-index: 1500; display: flex; flex-direction: column; }
+    .game-window { position: fixed; background: rgba(13, 17, 23, 0.95); border: 2px solid rgba(248, 81, 73, 0.3); border-radius: 4px; display: flex; flex-direction: column; left: 50px; top: 50px; z-index: 1000; }
     .window-header { background: rgba(88, 166, 255, 0.1); border-bottom: 1px solid rgba(88, 166, 255, 0.3); padding: 12px 15px; color: #58a6ff; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none; }
     .window-close { background: rgba(248, 81, 73, 0.2); border: 1px solid rgba(248, 81, 73, 0.4); color: #f85149; padding: 5px 10px; border-radius: 2px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease; }
     .window-close:hover { background: rgba(248, 81, 73, 0.3); border-color: #f85149; }
@@ -151,6 +151,11 @@ window.addEventListener('load', () => {
   loadHQData();
   updateClock();
   setInterval(updateClock, 1000);
+  
+  // Auto-open dashboard on page load
+  setTimeout(() => {
+    openDepartmentWindow();
+  }, 500);
 });
 
 async function loadHQData() {
@@ -261,19 +266,17 @@ function createParticleNetwork() {
   }
   
   function draw() {
-    console.log('draw() called');
     const canvas = document.querySelector('canvas');
     const ctx = canvas.getContext('2d');
 
-    if (!animationEnabled) {
-      animationFrameId = requestAnimationFrame(draw);
-      return;
-    }
-    
     ctx.fillStyle = 'rgba(10, 22, 40, 1.0)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (!animationEnabled) {
+    requestAnimationFrame(draw);
+    return;
+   }
     
-    console.log('Particles to draw:', particles.length);
     particles.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
@@ -332,13 +335,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function openDepartmentWindow(departmentName, departmentId) {
+  // Don't open if already open
+  if (document.getElementById('operations-center')) {
+    return;
+  }
+  const screenWidth = globalThis.innerWidth;
+  const screenHeight = globalThis.innerHeight;
+  const windowWidth = 1200;
+  const windowHeight = 700;
+  const left = (screenWidth - windowWidth) / 2;
+  const top = (screenHeight - windowHeight) / 2;
+  
   const window = document.createElement('div');
   window.classList.add('game-window');
   window.id = 'operations-center';
   window.style.width = '1200px';
   window.style.height = '700px';
-  window.style.left = '50px';
-  window.style.top = '50px';
+  window.style.left = left + 'px';
+  window.style.top = top + 'px';
   window.style.display = 'flex';
   window.style.flexDirection = 'column';
   
@@ -412,7 +426,7 @@ function openDepartmentWindow(departmentName, departmentId) {
   // Setup tab clicks
   window.querySelectorAll('.ops-tab').forEach(tab => {
     tab.addEventListener('click', (e) => {
-      openTabWindow(e.target.dataset.tab, e.target.textContent);
+     openTabWindow(e.target.dataset.tab, e.target.textContent);
     });
   });
   
@@ -524,7 +538,13 @@ function loadNewsFeed(tab) {
 }
 
 function openTabWindow(tabId, tabName) {
+  // Don't open duplicate windows
+  if (document.getElementById('tab-' + tabId)) {
+    return;
+  }
+  
   const tabWindow = document.createElement('div');
+  tabWindow.id = 'tab-' + tabId;
   tabWindow.classList.add('game-window');
   tabWindow.style.width = '600px';
   tabWindow.style.height = '400px';
