@@ -29,6 +29,9 @@
 <body>
 <div class="container">
   <h1>FREIGHT EMPIRE - Admin Panel</h1>
+  <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+  <button onclick="adminLogout()" style="background: rgba(248,81,73,0.2); border: 1px solid rgba(248,81,73,0.3); color: #f85149; padding: 6px 14px; cursor: pointer; border-radius: 4px;">Logout</button>
+  </div>
   
   <div class="tabs">
   <button class="tab active" onclick="switchTab(event, 'overview')">Overview</button>
@@ -122,6 +125,11 @@
 <script>
   const API = "https://game.merimarkdigital.com";
 
+function adminLogout() {
+  localStorage.removeItem('authToken');
+  window.location.href = '/index.html';
+}
+
   // Decode admin type from JWT token
 function getAdminTypeFromToken() {
   const token = localStorage.getItem('authToken');
@@ -140,6 +148,17 @@ let userAdminType = getAdminTypeFromToken();
   let allPlayers = [];
 
   window.addEventListener('load', () => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    window.location.href = '/index.html';
+    return;
+  }
+  userAdminType = getAdminTypeFromToken();
+  if (!userAdminType) {
+    localStorage.removeItem('authToken');
+    window.location.href = '/index.html';
+    return;
+  }
   loadStats();
   loadCompanies();
   loadPlayers();
