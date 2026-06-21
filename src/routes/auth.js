@@ -2,7 +2,6 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../db/connection');
 const crypto = require('crypto');
-const sgMail = require('@sendgrid/mail');
 
 const router = express.Router();
 
@@ -61,27 +60,28 @@ router.post('/signup', async (req, res) => {
     );
 
     // Send verification email
-    const verificationLink = `https://game.merimarkdigital.com/?verify=${verificationToken}`;
-    
-    try {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const verificationLink = `https://game.merimarkdigital.com/?verify=${verificationToken}`;
 
-      await sgMail.send({
-        to: email,
-        from: 'noreply@game.merimarkdigital.com',
-        subject: 'Verify Your Freight Empire Account',
-        html: `
-          <h2>Welcome to Freight Empire!</h2>
-          <p>Click the link below to verify your email and activate your account:</p>
-          <a href="${verificationLink}" style="background-color: #58a6ff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email</a>
-          <p>This link expires in 24 hours.</p>
-          <p>If you did not create this account, you can safely ignore this email.</p>
-        `
-      });
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
-    }
+try {
+  const sgMail = require('@sendgrid/mail');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+  await sgMail.send({
+    to: email,
+    from: 'noreply@game.merimarkdigital.com',
+    subject: 'Verify Your Freight Empire Account',
+    html: `
+      <h2>Welcome to Freight Empire!</h2>
+      <p>Click the link below to verify your email and activate your account:</p>
+      <a href="${verificationLink}" style="background-color: #58a6ff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email</a>
+      <p>This link expires in 24 hours.</p>
+      <p>If you did not create this account, you can safely ignore this email.</p>
+    `
+  });
+} catch (emailError) {
+  console.error('Failed to send verification email:', emailError);
+  return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+}
 
     res.status(201).json({
       message: 'Account created! Check your email to verify.',
