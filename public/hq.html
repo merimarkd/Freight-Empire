@@ -448,7 +448,7 @@ window.querySelectorAll('.news-tab').forEach(tab => {
 
 // Load initial data
 updateTicker();
-loadNewsFeed('global');
+loadNewsFeed('global');}
 
 
 async function loadCompanyStats() {
@@ -481,13 +481,6 @@ function updateOpsTime() {
   if (timeEl) {
     timeEl.textContent = time + ' ' + tzName;
   }
-}
-
-function handleLogout() {
-  showGameWindow('Logout', 'Are you sure you want to end your session?', 'confirm', () => {
-    localStorage.removeItem('authToken');
-    window.location.href = '/index.html';
-  });
 }
 
 function showGameWindow(title, message) {
