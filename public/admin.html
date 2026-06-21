@@ -536,6 +536,11 @@ async function deleteCompany(companyId) {
       } else {
         showGameWindow('Error', 'Failed to delete company.');
       }
+    } catch (e) {
+      showGameWindow('Error', 'Failed to delete company.');
+    }
+  });
+}
 
 async function deletePlayer(playerId, username) {
   openDeletePlayerModal(playerId, username);
