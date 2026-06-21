@@ -428,30 +428,38 @@ router.post('/admin/reset-all', async (req, res) => {
 });
 
 // Admin: Delete a company and put it up for auction
-router.post('/admin/delete-company', async (req, res) => {
+router.post('/admin/auction-company', async (req, res) => {
   try {
-    const { companyId, reason } = req.body;
-    
-    // Get company details
+    const { companyId } = req.body;
     const companyRes = await pool.query('SELECT * FROM companies WHERE id = $1', [companyId]);
     if (companyRes.rows.length === 0) {
       return res.status(404).json({ error: 'Company not found' });
     }
-    
     const company = companyRes.rows[0];
-    
-    // Create auction at 50% value
     const auctionPrice = parseFloat(company.cash) * 0.5;
     await pool.query(`
       INSERT INTO company_auctions (company_id, company_name, original_owner_id, starting_price, current_price)
       VALUES ($1, $2, $3, $4, $5)
     `, [companyId, company.name, company.owner_id, auctionPrice, auctionPrice]);
-    
-    // Clear current_company_id from any players referencing this company
     await pool.query('UPDATE players SET current_company_id = NULL WHERE current_company_id = $1', [companyId]);
-    // Delete company
+    await pool.query('UPDATE companies SET owner_id = NULL WHERE id = $1', [companyId]);
+    res.json({ success: true, message: 'Company sent to auction' });
+  } catch (error) {
+    console.error('Auction company error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/admin/delete-company', async (req, res) => {
+  try {
+    const { companyId } = req.body;
+    const companyRes = await pool.query('SELECT * FROM companies WHERE id = $1', [companyId]);
+    if (companyRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    await pool.query('UPDATE players SET current_company_id = NULL WHERE current_company_id = $1', [companyId]);
     await pool.query('DELETE FROM companies WHERE id = $1', [companyId]);
-    res.json({ success: true, message: 'Company deleted and auctioned' });
+    res.json({ success: true, message: 'Company permanently deleted' });
   } catch (error) {
     console.error('Delete company error:', error);
     res.status(500).json({ error: error.message });

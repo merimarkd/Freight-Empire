@@ -300,7 +300,10 @@ let userAdminType = getAdminTypeFromToken();
       <td>${c.active_loans}</td>
       <td>$${parseFloat(c.cash).toLocaleString()}</td>
       <td>${new Date(c.created_at).toLocaleDateString()}</td>
-      <td><button onclick="deleteCompany('${c.id}')" class="admin-btn-delete">Delete</button></td>
+      <td>
+      <button onclick="sendToAuction('${c.id}')" class="admin-btn-action" style="margin-right: 4px;">Auction</button>
+      <button onclick="deleteCompany('${c.id}')" class="admin-btn-delete">Delete</button>
+      </td>
     </tr>
   `).join('');
   document.getElementById('companiesTable').innerHTML = html || '<tr><td colspan="8">No companies found</td></tr>';
@@ -487,6 +490,28 @@ async function loadDeletedPlayerDetails(playerId) {
     console.error(error);
     document.getElementById('deletedPlayerContent').innerHTML = '<span style="color: #f85149;">Error: ' + error.message + '</span>';
   }
+}
+
+async function sendToAuction(companyId) {
+  showConfirmWindow('Send to Auction', 'List this company on the auction house at 50% value?', async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(API + '/api/game/admin/auction-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ companyId })
+      });
+      if (res.ok) {
+        showGameWindow('Success', 'Company sent to auction at 50% value.');
+        loadCompanies();
+      } else {
+        const data = await res.json();
+        showGameWindow('Error', data.error || 'Failed to send to auction.');
+      }
+    } catch (e) {
+      showGameWindow('Error', 'Network error.');
+    }
+  });
 }
 
 async function deleteCompany(companyId) {

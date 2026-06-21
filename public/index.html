@@ -329,7 +329,7 @@ function showGameWindow(title, message, type) {
       });
       const data = await res.json();
       if (!res.ok) { showError("company", data.error || "Failed"); return; }
-      window.location.href = '/dashboard.html';
+      window.location.href = '/hq.html';
     } catch (e) {
       showError("company", "Network error");
     }

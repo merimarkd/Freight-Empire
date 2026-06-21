@@ -16,6 +16,27 @@ async function runMigrations() {
     `);
     console.log('✓ Migration: Added password_hash to players');
 
+    // Add email_verified column to players
+    await pool.query(`
+      ALTER TABLE players
+      ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE
+    `);
+    console.log('✓ Migration: Added email_verified to players');
+
+    // Add verification_token column to players
+    await pool.query(`
+      ALTER TABLE players
+      ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)
+    `);
+    console.log('✓ Migration: Added verification_token to players');
+
+    // Add verification_token_expires_at column to players
+    await pool.query(`
+      ALTER TABLE players
+      ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP
+    `);
+    console.log('✓ Migration: Added verification_token_expires_at to players');
+
     // Add last_login to players
     await pool.query(`
       ALTER TABLE players 
