@@ -346,16 +346,10 @@ async function handleAdminLogin() {
       showError("adminLogin", "Network error - please try again");
     }
   }
-      if (!res.ok) { showError("adminLogin", data.error || "Admin login failed"); return; }
-      token = data.token;
-      localStorage.setItem("authToken", token);
-      window.location.href = '/admin.html';
-    } catch (e) {
-      showError("adminLogin", "Network error - please try again");
-    }
-  }
-  </div>
-</div>
+
 </script>
+</div>
+</div>
 </body>
 </html>
+
