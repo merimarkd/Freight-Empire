@@ -343,11 +343,27 @@ router.get('/hq/:companyId', async (req, res) => {
   }
 });
 
+// POST /api/game/ping - Update last_login to keep player online
+router.post('/ping', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const token = authHeader.substring(7);
+    const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET || 'freight-empire-secret-key-change-in-production');
+    await pool.query('UPDATE players SET last_login = NOW() WHERE id = $1', [decoded.playerId]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get players online count
 router.get('/players-online', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT COUNT(DISTINCT id) as count FROM players WHERE last_login > NOW() - INTERVAL \'30 minutes\''
+      'SELECT COUNT(DISTINCT id) as count FROM players WHERE last_login > NOW() - INTERVAL \'2 minutes\''
     );
     res.json({ count: parseInt(result.rows[0].count) || 0 });
   } catch (error) {

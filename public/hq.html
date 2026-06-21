@@ -74,10 +74,12 @@
   </style>
 </head>
 <body>
-<body>
 <div class="hq-container">
   <div class="hq-header">
-  <button class="hq-dashboard-btn" onclick="openDepartmentWindow()">📊 DASHBOARD</button>
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <button class="hq-dashboard-btn" onclick="openDepartmentWindow()">DASHBOARD</button>
+    <span id="headerUsername" style="color: #58a6ff; font-size: 0.85rem; font-weight: bold;"></span>
+  </div>
   <div class="hq-title">FREIGHT EMPIRE</div>
   <div class="hq-stats">
     <span id="headerPlayersOnline">Players Online: 0</span>
@@ -177,7 +179,7 @@ async function loadHQData() {
     const companyRes = await fetch(API + '/api/game/hq/' + player.current_company_id);
     companyData = await companyRes.json();
     
-    
+    document.getElementById('headerUsername').textContent = player.username || '';
     setupHotspots();
     createParticleNetwork();
   } catch (error) {
@@ -448,7 +450,7 @@ updateTicker();
 loadNewsFeed('global');
 
 // Refresh players online every 5 minutes
-setInterval(loadPlayersOnline, 5 * 60 * 1000);
+setInterval(loadPlayersOnline, 10 * 1000);
 }
 
 async function loadCompanyStats() {
@@ -528,6 +530,38 @@ function loadPlayersOnline() {
     })
     .catch(err => console.error('Error loading players online:', err));
 }
+
+// Ping server every 60 seconds to stay online
+function pingServer() {
+  const token = localStorage.getItem('authToken');
+  if (!token) return;
+  fetch(API + '/api/game/ping', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).catch(err => console.error('Ping error:', err));
+}
+setInterval(pingServer, 60 * 1000);
+pingServer();
+
+// AFK timer - kick after 30 minutes of inactivity
+let afkTimer;
+function resetAFKTimer() {
+  clearTimeout(afkTimer);
+  afkTimer = setTimeout(() => {
+    showConfirmWindow(
+      'Session Expired',
+      'You have been inactive for 30 minutes. You will be logged out.',
+      () => {
+        localStorage.removeItem('authToken');
+        window.location.href = '/index.html';
+      }
+    );
+  }, 30 * 60 * 1000);
+}
+document.addEventListener('mousemove', resetAFKTimer);
+document.addEventListener('keydown', resetAFKTimer);
+document.addEventListener('click', resetAFKTimer);
+resetAFKTimer();
 
 function updateTicker() {
   const tickers = [
