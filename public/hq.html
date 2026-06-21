@@ -72,6 +72,7 @@
     .news-body { color: #c9d1d9; font-size: 0.9rem; line-height: 1.4; }
 </style>
   </style>
+<script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 <div class="hq-container">
@@ -180,6 +181,7 @@ async function loadHQData() {
     companyData = await companyRes.json();
     
     document.getElementById('headerUsername').textContent = player.username || '';
+    initSocket(player.id);
     setupHotspots();
     createParticleNetwork();
   } catch (error) {
@@ -445,13 +447,9 @@ window.querySelectorAll('.news-tab').forEach(tab => {
 });
 
 // Load initial data
-loadPlayersOnline();
 updateTicker();
 loadNewsFeed('global');
 
-// Refresh players online every 5 minutes
-setInterval(loadPlayersOnline, 10 * 1000);
-}
 
 async function loadCompanyStats() {
   try {
@@ -530,32 +528,31 @@ function loadPlayersOnline() {
     .catch(err => console.error('Players online error:', err));
 }
 
-// Ping server every 60 seconds to stay online
-function pingServer() {
-  const token = localStorage.getItem('authToken');
-  if (!token) return;
-  fetch(API + '/api/game/ping', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token }
-  }).catch(err => console.error('Ping error:', err));
-}
-setInterval(pingServer, 60 * 1000);
-pingServer();
+function initSocket(playerId) {
+  const socket = io();
 
-// AFK timer - kick after 30 minutes of inactivity
-let afkTimer;
-function resetAFKTimer() {
-  clearTimeout(afkTimer);
-  afkTimer = setTimeout(() => {
-    showConfirmWindow(
-      'Session Expired',
-      'You have been inactive for 30 minutes. You will be logged out.',
-      () => {
-        localStorage.removeItem('authToken');
-        window.location.href = '/index.html';
-      }
-    );
-  }, 30 * 60 * 1000);
+  socket.on('connect', () => {
+    console.log('Socket connected');
+    socket.emit('player-join', { playerId: playerId });
+  });
+
+  socket.on('players-online-count', (data) => {
+    document.getElementById('headerPlayersOnline').textContent = 'Players Online: ' + data.count;
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected');
+  });
+
+  // Heartbeat every 60 seconds to keep last_login fresh for AFK detection
+  setInterval(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    fetch(API + '/api/game/ping', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).catch(err => console.error('Ping error:', err));
+  }, 60 * 1000);
 }
 document.addEventListener('mousemove', resetAFKTimer);
 document.addEventListener('keydown', resetAFKTimer);

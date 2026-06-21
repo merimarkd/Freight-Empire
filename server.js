@@ -65,17 +65,24 @@ app.use((err, req, res, next) => {
 });
 
 // Socket.io connection
-io.on('connection', (socket) => {
-  console.log(`Player connected: ${socket.id}`);
+const connectedPlayers = new Map(); // socketId -> playerId
 
-  // Listen for player events
+io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
   socket.on('player-join', (data) => {
-    console.log(`Player joined: ${data.playerId}`);
-    socket.broadcast.emit('player-status', { playerId: data.playerId, status: 'online' });
+    if (data.playerId) {
+      connectedPlayers.set(socket.id, data.playerId);
+      console.log(`Player online: ${data.playerId} | Total: ${connectedPlayers.size}`);
+      io.emit('players-online-count', { count: connectedPlayers.size });
+    }
   });
 
   socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id}`);
+    const playerId = connectedPlayers.get(socket.id);
+    connectedPlayers.delete(socket.id);
+    console.log(`Player offline: ${playerId} | Total: ${connectedPlayers.size}`);
+    io.emit('players-online-count', { count: connectedPlayers.size });
   });
 });
 
