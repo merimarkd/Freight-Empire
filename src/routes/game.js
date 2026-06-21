@@ -447,11 +447,13 @@ router.post('/admin/delete-company', async (req, res) => {
       VALUES ($1, $2, $3, $4, $5)
     `, [companyId, company.name, company.owner_id, auctionPrice, auctionPrice]);
     
-    // Delete company (will cascade delete related data)
+    // Clear current_company_id from any players referencing this company
+    await pool.query('UPDATE players SET current_company_id = NULL WHERE current_company_id = $1', [companyId]);
+    // Delete company
     await pool.query('DELETE FROM companies WHERE id = $1', [companyId]);
-    
     res.json({ success: true, message: 'Company deleted and auctioned' });
   } catch (error) {
+    console.error('Delete company error:', error);
     res.status(500).json({ error: error.message });
   }
 });
