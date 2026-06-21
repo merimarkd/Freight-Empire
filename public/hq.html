@@ -468,12 +468,15 @@ function updateOpsTime() {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: timezone
+    timeZone: timezone,
+    timeZoneName: 'short'
   });
-  
+  const parts = formatter.formatToParts(now);
+  const time = parts.filter(p => p.type === 'hour' || p.type === 'literal' || p.type === 'minute').map(p => p.value).join('');
+  const tzName = parts.find(p => p.type === 'timeZoneName')?.value || '';
   const timeEl = document.getElementById('opsTime');
   if (timeEl) {
-    timeEl.textContent = formatter.format(now);
+    timeEl.textContent = time + ' ' + tzName;
   }
 }
 
@@ -659,9 +662,17 @@ function hideTooltip() {
 
 function updateClock() {
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById('headerTime').textContent = hours + ':' + minutes;
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+    timeZoneName: 'short'
+  });
+  const parts = formatter.formatToParts(now);
+  const time = parts.filter(p => p.type === 'hour' || p.type === 'literal' || p.type === 'minute').map(p => p.value).join('');
+  const tzName = parts.find(p => p.type === 'timeZoneName')?.value || '';
+  document.getElementById('headerTime').textContent = time + ' ' + tzName;
 }
 </script>
 </body>
