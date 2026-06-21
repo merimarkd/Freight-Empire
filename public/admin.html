@@ -387,39 +387,6 @@ async function executePurge(playerId) {
   }
 }
 
-function showGameWindow(title, message) {
-  const overlay = document.createElement('div');
-  overlay.id = 'gameWindowOverlay';
-  overlay.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); z-index: 9999;
-  `;
-  
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(13,17,23,0.98); border: 2px solid rgba(88,166,255,0.4);
-    padding: 30px; border-radius: 8px; z-index: 10001;
-    min-width: 400px; box-shadow: 0 0 30px rgba(88,166,255,0.3);
-  `;
-  modal.innerHTML = `
-    <h2 style="color: #58a6ff; margin-bottom: 15px; font-size: 1.2rem;">${title}</h2>
-    <p style="color: #c9d1d9; margin-bottom: 20px;">${message}</p>
-    <button onclick="closeGameWindow()" style="padding: 8px 16px; background: rgba(88,166,255,0.1); color: #58a6ff; border: 1px solid rgba(88,166,255,0.3); border-radius: 4px; cursor: pointer; width: 100%;">Close</button>
-  `;
-  document.body.appendChild(overlay);
-  document.body.appendChild(modal);
-}
-
-function closeGameWindow() {
-  const overlay = document.querySelector('[id="gameWindowOverlay"]');
-  if (overlay) overlay.remove();
-  const modals = document.querySelectorAll('div[style*="position: fixed"]');
-  modals.forEach(m => {
-    if (m.style.zIndex === '10001') m.remove();
-  });
-}
-
 function viewDeletedPlayer(id, username) {
   openDeletedPlayerModal(id, username);
 }
