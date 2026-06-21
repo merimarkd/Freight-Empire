@@ -117,9 +117,15 @@
       <label>Email</label>
       <input type="email" id="signupEmail" placeholder="your@email.com">
       <label>Password</label>
-      <input type="password" id="signupPassword" placeholder="password">
+      <div class="password-field">
+        <input type="password" id="signupPassword" placeholder="password">
+        <button type="button" class="eye-toggle" onclick="togglePasswordVisibility('signupPassword')">👁️</button>
+      </div>
       <label>Confirm Password</label>
-      <input type="password" id="signupConfirm" placeholder="password">
+      <div class="password-field">
+        <input type="password" id="signupConfirm" placeholder="password">
+        <button type="button" class="eye-toggle" onclick="togglePasswordVisibility('signupConfirm')">👁️</button>
+      </div>
       <button onclick="handleSignup()">CREATE ACCOUNT</button>
       <div class="link">Already have one? <a onclick="switchScreen(event, 'loginScreen')">Login</a></div>
     </div>
@@ -232,7 +238,6 @@ function showGameWindow(title, message, type) {
     const data = await res.json();
     if (!res.ok) { showError("signup", data.error || "Signup failed"); return; }
     showGameWindow("Check Your Email", `Verification link sent to ${email}. Click the link to activate your account.`, "success");
-    setTimeout(() => switchScreen(null, "loginScreen"), 3000);
   } catch (e) {
     showError("signup", "Network error - please try again");
   }
