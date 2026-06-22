@@ -15,3 +15,4 @@ build/
 *.swo
 *~
 .temp/
+public/animation1.mp4
