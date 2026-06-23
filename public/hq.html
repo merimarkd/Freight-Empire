@@ -771,9 +771,23 @@ function makeResizable(element) {
     };
     
     const stop = () => {
-      isResizing = false;
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mouseup', stop);
+      const sidebarWidth = 350;
+      const rect = element.getBoundingClientRect();
+      const minX = sidebarWidth;
+      const maxX = window.innerWidth - sidebarWidth - rect.width;
+      const minY = 0;
+      const maxY = window.innerHeight - rect.height;
+      // If window is overlapping either sidebar, snap it to safe zone
+      if (rect.left < sidebarWidth || rect.right > window.innerWidth - sidebarWidth) {
+        const safeX = Math.min(Math.max(element.offsetLeft, minX), maxX);
+        const safeY = Math.min(Math.max(element.offsetTop, minY), maxY);
+        element.style.transition = 'left 0.2s, top 0.2s';
+        element.style.left = safeX + 'px';
+        element.style.top = safeY + 'px';
+        setTimeout(() => element.style.transition = '', 200);
+      }
     };
     
     document.addEventListener('mousemove', move);
