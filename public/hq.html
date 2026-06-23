@@ -248,7 +248,7 @@ async function loadHQData() {
     document.getElementById('headerUsername').textContent = player.username || '';
     initSocket(player.id);
     setupHotspots();
-    createParticleNetwork();
+    // createParticleNetwork(); // Disabled - using video background instead
   } catch (error) {
     console.error('Error loading HQ data:', error);
   }
