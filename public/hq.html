@@ -399,8 +399,14 @@ function createParticleNetwork() {
 
 function toggleAnimation() {
   const button = document.getElementById('animToggle');
+  const video = document.getElementById('bgVideo');
   animationEnabled = !animationEnabled;
   button.classList.toggle('off', !animationEnabled);
+  if (animationEnabled) {
+    video.play();
+  } else {
+    video.pause();
+  }
 }
 
 function openDepartmentWindow(departmentName, departmentId) {
@@ -755,8 +761,11 @@ function makeResizable(element) {
     
     const move = (e) => {
       if (!isResizing) return;
-      const newWidth = Math.max(minWidth, startWidth + (e.clientX - startX));
-      const newHeight = Math.max(minHeight, startHeight + (e.clientY - startY));
+      const sidebarWidth = 350;
+      const maxWidth = window.innerWidth - sidebarWidth - element.offsetLeft;
+      const maxHeight = window.innerHeight - element.offsetTop;
+      const newWidth = Math.min(Math.max(minWidth, startWidth + (e.clientX - startX)), maxWidth);
+      const newHeight = Math.min(Math.max(minHeight, startHeight + (e.clientY - startY)), maxHeight);
       element.style.width = newWidth + 'px';
       element.style.height = newHeight + 'px';
     };
