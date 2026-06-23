@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../db/migrations');
+const { pool } = require('../db/connection');
 const jwt = require('jsonwebtoken');
 
 function authMiddleware(req, res, next) {
