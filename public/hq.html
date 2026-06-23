@@ -90,7 +90,7 @@
     .department-menu h3 { color: #58a6ff; margin-bottom: 15px; border-bottom: 1px solid rgba(88, 166, 255, 0.3); padding-bottom: 10px; }
     .department-item { padding: 10px; margin: 8px 0; background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 2px; cursor: pointer; transition: all 0.2s ease; color: #c9d1d9; }
     .department-item:hover { background: rgba(88, 166, 255, 0.2); border-color: #58a6ff; color: #58a6ff; }
-    .game-window { position: fixed; background: rgba(13, 17, 23, 0.95); border: 2px solid rgba(88, 166, 255, 0.4); border-radius: 4px; display: flex; flex-direction: column; left: 50px; top: 50px; z-index: 1000; }
+    .game-window { position: fixed; background: rgba(13, 17, 23, 0.95); border: 2px solid rgba(88, 166, 255, 0.4); border-radius: 4px; display: flex; flex-direction: column; left: 400px; top: 50px; z-index: 1000; }
     .window-header { background: rgba(88, 166, 255, 0.1); border-bottom: 1px solid rgba(88, 166, 255, 0.3); padding: 12px 15px; color: #58a6ff; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none; }
     .window-close { background: rgba(248, 81, 73, 0.2); border: 1px solid rgba(248, 81, 73, 0.4); color: #f85149; padding: 5px 10px; border-radius: 2px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease; }
     .window-close:hover { background: rgba(248, 81, 73, 0.3); border-color: #f85149; }
@@ -775,12 +775,10 @@ function makeResizable(element) {
       document.removeEventListener('mouseup', stop);
       const sidebarWidth = 350;
       const rect = element.getBoundingClientRect();
-      const elWidth = rect.width;
-      const elHeight = rect.height;
       const minX = sidebarWidth;
-      const maxX = window.innerWidth - sidebarWidth - elWidth;
+      const maxX = window.innerWidth - sidebarWidth - rect.width;
       const minY = 0;
-      const maxY = window.innerHeight - elHeight;
+      const maxY = window.innerHeight - rect.height;
       if (rect.left < sidebarWidth || rect.right > window.innerWidth - sidebarWidth) {
         const safeX = Math.min(Math.max(rect.left, minX), maxX);
         const safeY = Math.min(Math.max(rect.top, minY), maxY);
