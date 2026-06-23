@@ -868,7 +868,7 @@ function openTabWindow(tabId, tabName) {
   makeDraggable(tabWindow);
   makeResizable(tabWindow);
   document.body.appendChild(tabWindow);
-
+}
 function updateOpsInfo() {
   document.getElementById('opsBalance').textContent = (companyData.cash || 0).toLocaleString();
   document.getElementById('opsDrivers').textContent = '0';
