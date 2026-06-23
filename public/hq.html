@@ -712,8 +712,15 @@ function makeDraggable(element) {
     offsetY = e.clientY - element.offsetTop;
     
     const move = (e) => {
-      element.style.left = (e.clientX - offsetX) + 'px';
-      element.style.top = (e.clientY - offsetY) + 'px';
+      const sidebarWidth = 350;
+      const minX = sidebarWidth;
+      const maxX = window.innerWidth - sidebarWidth - element.offsetWidth;
+      const minY = 0;
+      const maxY = window.innerHeight - element.offsetHeight;
+      const newX = Math.min(Math.max(e.clientX - offsetX, minX), maxX);
+      const newY = Math.min(Math.max(e.clientY - offsetY, minY), maxY);
+      element.style.left = newX + 'px';
+      element.style.top = newY + 'px';
     };
     
     const stop = () => {
