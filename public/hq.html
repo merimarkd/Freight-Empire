@@ -773,9 +773,6 @@ function openTabWindow(tabId, tabName) {
   tabWindow.classList.add('game-window');
   tabWindow.style.width = '600px';
   tabWindow.style.height = '400px';
-  const headerHeight = document.querySelector('.hq-header').offsetHeight;
-  tabWindow.style.left = (350 + Math.random() * 200 + 50) + 'px';
-  tabWindow.style.top = (headerHeight + Math.random() * 100 + 20) + 'px';
   
   const tabContents = {
     'payroll': '<p>Payroll Management - Coming Soon</p>',
@@ -794,8 +791,10 @@ function openTabWindow(tabId, tabName) {
   };
   
   if (tabId === 'market') {
-    tabWindow.style.width = '1100px';
-    tabWindow.style.height = '650px';
+    tabWindow.style.width = '1848px';
+    tabWindow.style.height = '1157px';
+    tabWindow.style.left = '487px';
+    tabWindow.style.top = '97px';
     tabWindow.innerHTML = `
       <div class="window-header">
         <span>CONTINENTAL FREIGHT EXCHANGE</span>
