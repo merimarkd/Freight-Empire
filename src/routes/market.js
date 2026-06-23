@@ -162,4 +162,9 @@ router.delete('/order/:orderId', authMiddleware, async (req, res) => {
     }
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error:
+
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
