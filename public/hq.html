@@ -195,6 +195,19 @@
     .ops-sidebar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
     .ops-sidebar::-webkit-scrollbar-thumb { background: rgba(0,180,220,0.4); border-radius: 2px; }
     .ops-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(0,180,220,0.7); }
+    .window-controls { display: flex; align-items: center; gap: 4px; }
+    .win-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text-muted); padding: 3px 8px; cursor: pointer; font-size: 0.85rem; border-radius: 2px; transition: all 0.2s; font-family: inherit; line-height: 1; }
+    .win-btn:hover { border-color: var(--border-hi); color: var(--text-hi); }
+    .win-btn-close { background: rgba(200,64,64,0.2); border-color: rgba(200,64,64,0.4); color: #f85149; }
+    .win-btn-close:hover { background: rgba(200,64,64,0.4); border-color: #f85149; }
+    .win-btn-minimize { background: rgba(0,180,220,0.1); border-color: rgba(0,180,220,0.3); color: var(--teal); }
+    .win-btn-minimize:hover { background: rgba(0,180,220,0.25); border-color: var(--teal); }
+    .win-context-menu { position: fixed; background: rgba(8,12,18,0.98); border: 1px solid var(--border); z-index: 99999; min-width: 220px; padding: 4px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+    .win-context-item { padding: 8px 16px; color: var(--text); font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; }
+    .win-context-item:hover { background: rgba(0,180,220,0.1); color: var(--teal); }
+    .win-context-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+    .win-minimized .window-content, .win-minimized .market-window, .win-minimized .ops-main { display: none !important; }
+    .win-minimized { height: auto !important; }
 </style>
 <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -517,8 +530,12 @@ function openDepartmentWindow(departmentName, departmentId) {
   
   window.innerHTML = `
     <div class="window-header">
-      <span>${companyData.name.toUpperCase()}</span>
-      <button class="window-close">X</button>
+      <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">${companyData.name.toUpperCase()}</span>
+      <div class="window-controls">
+        <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+        <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+        <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+      </div>
     </div>
     <div class="ops-main">
       <div class="ops-sidebar">
@@ -578,7 +595,6 @@ function openDepartmentWindow(departmentName, departmentId) {
     </div>
   `;
   
-  window.querySelector('.window-close').addEventListener('click', () => window.remove());
   
   // Setup tab clicks
   window.querySelectorAll('.ops-tab').forEach(tab => {
@@ -805,11 +821,11 @@ function openTabWindow(tabId, tabName) {
     tabWindow.style.top = '92px';
     tabWindow.innerHTML = `
       <div class="window-header">
-        <span>CONTINENTAL FREIGHT EXCHANGE</span>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <button class="window-close" style="background:transparent;border:none;color:var(--text-muted);font-size:1rem;cursor:pointer;padding:0 6px;">&#8942;</button>
-          <button class="window-close" style="background:transparent;border:none;color:var(--text-muted);font-size:1rem;cursor:pointer;padding:0 6px;">&#8211;</button>
-          <button class="window-close">X</button>
+        <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">CONTINENTAL FREIGHT EXCHANGE</span>
+        <div class="window-controls">
+          <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+          <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+          <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
         </div>
       </div>
       <div class="market-window">
@@ -854,7 +870,6 @@ function openTabWindow(tabId, tabName) {
         </div>
       </div>
     `;
-    tabWindow.querySelector('.window-close').addEventListener('click', () => tabWindow.remove());
     makeDraggable(tabWindow);
     makeResizable(tabWindow);
     document.body.appendChild(tabWindow);
@@ -864,14 +879,17 @@ function openTabWindow(tabId, tabName) {
 
   tabWindow.innerHTML = `
     <div class="window-header">
-      <span>${tabName}</span>
-      <button class="window-close">X</button>
+      <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">${tabName}</span>
+      <div class="window-controls">
+        <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+        <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+        <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+      </div>
     </div>
     <div class="window-content">
       ${tabContents[tabId] || '<p>Content not found</p>'}
     </div>
   `;
-  tabWindow.querySelector('.window-close').addEventListener('click', () => tabWindow.remove());
   makeDraggable(tabWindow);
   makeResizable(tabWindow);
   document.body.appendChild(tabWindow);
@@ -901,6 +919,7 @@ function makeResizable(element) {
   const minHeight = 750;
   
   resizer.addEventListener('mousedown', (e) => {
+    if (element.dataset.locked === 'true') return;
     isResizing = true;
     const startX = e.clientX;
     const startY = e.clientY;
@@ -946,6 +965,7 @@ function makeDraggable(element) {
   const header = element.querySelector('.window-header');
   let offsetX = 0, offsetY = 0;
   header.addEventListener('mousedown', (e) => {
+    if (element.dataset.locked === 'true') return;
     const rect = element.getBoundingClientRect();
     offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
@@ -977,6 +997,95 @@ function makeDraggable(element) {
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', stop);
   });
+}
+
+function createWindowHeader(title, element) {
+  const header = document.createElement('div');
+  header.className = 'window-header';
+  header.innerHTML = `
+    <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">${title}</span>
+    <div class="window-controls">
+      <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+      <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+      <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+    </div>
+  `;
+  return header;
+}
+
+function toggleMinimize(win) {
+  win.classList.toggle('win-minimized');
+}
+
+function showWindowMenu(e, win) {
+  e.stopPropagation();
+  document.querySelectorAll('.win-context-menu').forEach(m => m.remove());
+  const locked = win.dataset.locked === 'true';
+  const alwaysTop = win.dataset.alwaysTop === 'true';
+  const lightBg = win.dataset.lightBg === 'true';
+  const menu = document.createElement('div');
+  menu.className = 'win-context-menu';
+  menu.innerHTML = `
+    <div class="win-context-item" onclick="toggleLockWindow(this, event)">
+      <span>&#128274;</span> ${locked ? '&#10003; ' : ''}Lock window size and position
+    </div>
+    <div class="win-context-item" onclick="toggleAlwaysTop(this, event)">
+      <span>&#9633;</span> ${alwaysTop ? '&#10003; ' : ''}Enable always above fullscreen views
+    </div>
+    <div class="win-context-item" onclick="toggleLightBg(this, event)">
+      <span>&#9788;</span> ${lightBg ? '&#10003; ' : ''}Enable Light Background
+    </div>
+    <div class="win-context-divider"></div>
+    <div class="win-context-item" onclick="toggleMinimize(this.closest('.game-window') || document.querySelector('.game-window')); document.querySelectorAll('.win-context-menu').forEach(m=>m.remove())">
+      <span>&#8661;</span> Collapse
+    </div>
+  `;
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.dataset.win = win.id;
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 10);
+}
+
+function toggleLockWindow(item, e) {
+  e.stopPropagation();
+  const menu = item.closest('.win-context-menu');
+  const win = document.getElementById(menu.dataset.win);
+  if (!win) return;
+  const locked = win.dataset.locked === 'true';
+  win.dataset.locked = !locked;
+  if (!locked) {
+    win.dataset.savedLeft = win.style.left;
+    win.dataset.savedTop = win.style.top;
+    win.dataset.savedWidth = win.style.width;
+    win.dataset.savedHeight = win.style.height;
+    win.style.outline = '1px solid rgba(0,180,220,0.4)';
+  } else {
+    win.style.outline = '';
+  }
+  menu.remove();
+}
+
+function toggleAlwaysTop(item, e) {
+  e.stopPropagation();
+  const menu = item.closest('.win-context-menu');
+  const win = document.getElementById(menu.dataset.win);
+  if (!win) return;
+  const alwaysTop = win.dataset.alwaysTop === 'true';
+  win.dataset.alwaysTop = !alwaysTop;
+  win.style.zIndex = !alwaysTop ? '9000' : '1000';
+  menu.remove();
+}
+
+function toggleLightBg(item, e) {
+  e.stopPropagation();
+  const menu = item.closest('.win-context-menu');
+  const win = document.getElementById(menu.dataset.win);
+  if (!win) return;
+  const lightBg = win.dataset.lightBg === 'true';
+  win.dataset.lightBg = !lightBg;
+  win.style.background = !lightBg ? 'rgba(40,50,60,0.97)' : '';
+  menu.remove();
 }
 
 function showTooltip(event, text) {
@@ -1161,8 +1270,12 @@ function openPlaceOrder(orderType) {
   const isBuy = orderType === 'buy';
   w.innerHTML = `
     <div class="window-header">
-      <span>${isBuy ? 'PLACE BUY ORDER' : 'PLACE SELL ORDER'} — ${selectedMarketItem.name}</span>
-      <button class="window-close">X</button>
+      <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">${isBuy ? 'PLACE BUY ORDER' : 'PLACE SELL ORDER'} — ${selectedMarketItem.name}</span>
+      <div class="window-controls">
+        <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+        <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+        <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+      </div>
     </div>
     <div class="window-content" style="display:flex;flex-direction:column;gap:12px;">
       <div style="color:var(--text-muted);font-size:0.78rem;">Item: <span style="color:var(--text-hi);">${selectedMarketItem.name}</span></div>
@@ -1186,7 +1299,6 @@ function openPlaceOrder(orderType) {
       </div>
     </div>
   `;
-  w.querySelector('.window-close').addEventListener('click', () => w.remove());
   makeDraggable(w);
   document.body.appendChild(w);
 }
@@ -1221,8 +1333,12 @@ async function openMarketOrders() {
   w.style.cssText = 'width:700px;height:400px;left:450px;top:150px;';
   w.innerHTML = `
     <div class="window-header">
-      <span>MY MARKET ORDERS</span>
-      <button class="window-close">X</button>
+      <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">MY MARKET ORDERS</span>
+      <div class="window-controls">
+        <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+        <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+        <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+      </div>
     </div>
     <div class="window-content">
       <table class="market-orders-table" style="width:100%;">
@@ -1231,7 +1347,6 @@ async function openMarketOrders() {
       </table>
     </div>
   `;
-  w.querySelector('.window-close').addEventListener('click', () => w.remove());
   makeDraggable(w);
   makeResizable(w);
   document.body.appendChild(w);
@@ -1278,8 +1393,12 @@ function openMultibuy() {
   w.style.cssText = 'width:500px;height:350px;left:500px;top:200px;';
   w.innerHTML = `
     <div class="window-header">
-      <span>MULTIBUY</span>
-      <button class="window-close">X</button>
+      <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">MULTIBUY</span>
+      <div class="window-controls">
+        <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+        <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+        <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+      </div>
     </div>
     <div class="window-content" style="display:flex;flex-direction:column;gap:12px;">
       <div style="color:var(--text-muted);font-size:0.8rem;">Enter items to buy (one per line, format: Item Name, Quantity)</div>
@@ -1287,7 +1406,6 @@ function openMultibuy() {
       <button onclick="submitMultibuy()" style="padding:9px;background:rgba(0,180,220,0.15);border:1px solid var(--teal);color:var(--teal);font-family:inherit;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;border-radius:2px;">Process Multibuy</button>
     </div>
   `;
-  w.querySelector('.window-close').addEventListener('click', () => w.remove());
   makeDraggable(w);
   document.body.appendChild(w);
 }
