@@ -480,12 +480,12 @@ router.get('/industrial-zones', async (req, res) => {
   try {
     const { lat, lng } = req.query;
     if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' });
-    const delta = 0.3;
+    const delta = 0.5;
     const south = parseFloat(lat) - delta;
     const north = parseFloat(lat) + delta;
     const west = parseFloat(lng) - delta;
     const east = parseFloat(lng) + delta;
-    const query = `[out:json][timeout:15];way["landuse"="industrial"](${south},${west},${north},${east});out center 20;`;
+    const query = `[out:json][timeout:25];(way["landuse"="industrial"](${south},${west},${north},${east});way["landuse"="warehouse"](${south},${west},${north},${east});way["landuse"="logistics"](${south},${west},${north},${east});way["building"="warehouse"](${south},${west},${north},${east});way["building"="industrial"](${south},${west},${north},${east});node["industrial"="port"](${south},${west},${north},${east});node["amenity"="trucking"](${south},${west},${north},${east}););out center 30;`;
     const https = require('https');
     const options = {
       hostname: 'overpass-api.de',

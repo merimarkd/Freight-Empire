@@ -105,6 +105,13 @@
       transition: border-color 0.2s;
     }
     input::placeholder { color: var(--text-muted); }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
+      -webkit-text-fill-color: var(--text-hi) !important;
+      border-color: var(--border) !important;
+    }
     input:focus {
       outline: none;
       border-color: var(--border-hi);
