@@ -485,7 +485,7 @@ router.get('/industrial-zones', async (req, res) => {
     const north = parseFloat(lat) + delta;
     const west = parseFloat(lng) - delta;
     const east = parseFloat(lng) + delta;
-    const query = `[out:json][timeout:25];(way["landuse"="industrial"](${south},${west},${north},${east});way["landuse"="warehouse"](${south},${west},${north},${east});way["building"="warehouse"](${south},${west},${north},${east}););out center 30;`;
+    const query = `[out:json][timeout:25];(way["landuse"="industrial"](${south},${west},${north},${east});way["landuse"="warehouse"](${south},${west},${north},${east});way["building"="warehouse"](${south},${west},${north},${east}););out center 100;`;
     const https = require('https');
     const options = {
       hostname: 'overpass-api.de',
@@ -519,10 +519,13 @@ router.get('/industrial-zones', async (req, res) => {
         lat: e.center ? e.center.lat : e.lat,
         lng: e.center ? e.center.lon : e.lon,
         name: e.tags && e.tags.name ? e.tags.name : null,
-        available: !occupied.some(c => haversine(c.lat, c.lng, e.center ? e.center.lat : e.lat, e.center ? e.center.lon : e.lon) < 150)
       }))
-      .filter(z => z.available)
-      .slice(0, 20);
+      .filter(z => {
+        const dist = haversine(parseFloat(lat), parseFloat(lng), z.lat, z.lng);
+        return dist < 50000;
+      })
+      .filter(z => !occupied.some(c => haversine(c.lat, c.lng, z.lat, z.lng) < 150))
+      .slice(0, 50);
     res.json({ zones });
   } catch (error) {
     console.error('Industrial zones error:', error.message);
