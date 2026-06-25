@@ -204,7 +204,7 @@ router.post('/create-company', async (req, res) => {
     const decoded = require('jsonwebtoken').verify(token, 'freight-empire-secret-key-change-in-production');
     const ownerId = decoded.playerId;
     
-    const { name, username, hqCity, hqState, hqLatitude, hqLongitude, hqCounty, hqNeighborhood, locationLatitude, locationLongitude } = req.body;
+    const { name, username, hqCity, hqState, hqLatitude, hqLongitude, hqCounty, hqNeighborhood, locationLatitude, locationLongitude, hqZone } = req.body;
     
     if (!name || !username || !ownerId) {
   return res.status(400).json({ error: 'Company name and username are required' });
@@ -225,8 +225,8 @@ const dotNumber = String(Math.floor(Math.random() * 90000000) + 10000000); // 8-
 const mcNumber = String(Math.floor(Math.random() * 9000000) + 1000000); // 7-digit number
 
 const companyResult = await pool.query(
-     'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash, hq_state, hq_city, hq_latitude, hq_longitude, hq_county, hq_neighborhood, location_latitude, location_longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
-     [name, dotNumber, mcNumber, ownerId, 500000, hqState, hqCity, hqLatitude, hqLongitude, hqCounty, hqNeighborhood, locationLatitude, locationLongitude]
+     'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash, hq_state, hq_city, hq_latitude, hq_longitude, hq_county, hq_neighborhood, location_latitude, location_longitude, hq_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
+     [name, dotNumber, mcNumber, ownerId, 500000, hqState, hqCity, hqLatitude, hqLongitude, hqCounty, hqNeighborhood, locationLatitude, locationLongitude, hqZone]
    );
     
     const company = companyResult.rows[0];

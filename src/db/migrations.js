@@ -180,6 +180,8 @@ await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS hq_city VARCHAR
     await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS location_latitude DECIMAL(10,6)`);
     await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS location_longitude DECIMAL(10,6)`);
     console.log('✓ Migration: Added location coordinates to companies');
+    await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS hq_zone VARCHAR(255)`);
+    console.log('✓ Migration: Added hq_zone to companies');
     await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS hq_neighborhood VARCHAR(255)`);
     console.log('✓ Migration: Added hq coordinates to companies');
 

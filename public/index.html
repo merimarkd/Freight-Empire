@@ -665,7 +665,8 @@
   hqCounty: selectedLocation.county || null,
   hqNeighborhood: selectedLocation.neighborhood || null,
   locationLatitude: selectedLocation.locationLat || null,
-  locationLongitude: selectedLocation.locationLng || null
+  locationLongitude: selectedLocation.locationLng || null,
+  hqZone: selectedLocation.zoneName || null
 })
       });
       const data = await res.json();
@@ -803,7 +804,8 @@
     selectedLocation = {
       ...selectedLocation,
       locationLat: zone.lat,
-      locationLng: zone.lng
+      locationLng: zone.lng,
+      zoneName: zone.name || 'Industrial Zone'
     };
     document.getElementById('zoneStatus').textContent = 'Zone selected: ' + (zone.name || 'Industrial Zone');
     document.getElementById('createBtn').disabled = false;
