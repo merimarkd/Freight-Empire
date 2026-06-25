@@ -801,7 +801,7 @@ async function confirmDeletePlayer(playerId) {
         border-radius: 4px;
         z-index: 10001;
       `;
-      msg.textContent = '✓ Player deleted, companies auctioned, email banned';
+      msg.textContent = '✓ Player deleted, companies removed, email banned';
       document.body.appendChild(msg);
       setTimeout(() => msg.remove(), 3000);
       loadPlayers();
