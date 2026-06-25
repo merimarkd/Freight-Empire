@@ -164,7 +164,8 @@
 <div class="container">
   <h1>FREIGHT EMPIRE - Admin Panel</h1>
   <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-  <button onclick="adminLogout()" style="background: rgba(248,81,73,0.2); border: 1px solid rgba(248,81,73,0.3); color: #f85149; padding: 6px 14px; cursor: pointer; border-radius: 4px;">Logout</button>
+  <button onclick="refreshAdminData()" style="background: rgba(0,180,220,0.1); border: 1px solid rgba(0,180,220,0.3); color: #00b4dc; padding: 6px 14px; cursor: pointer; border-radius: 4px; margin-right: 8px; font-family: inherit;">Refresh</button>
+  <button onclick="adminLogout()" style="background: rgba(248,81,73,0.2); border: 1px solid rgba(248,81,73,0.3); color: #f85149; padding: 6px 14px; cursor: pointer; border-radius: 4px; font-family: inherit;">Logout</button>
   </div>
   
   <div class="tabs">
@@ -258,6 +259,13 @@
 
 <script>
   const API = "https://freightempire.merimarkdigital.com";
+
+function refreshAdminData() {
+  loadOverview();
+  loadCompanies();
+  loadPlayers();
+  loadDeletedPlayers();
+}
 
 function adminLogout() {
   localStorage.removeItem('authToken');
