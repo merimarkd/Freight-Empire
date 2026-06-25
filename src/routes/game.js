@@ -489,7 +489,7 @@ router.get('/industrial-zones', async (req, res) => {
       'CT':{s:40.95,n:42.05,w:-73.73,e:-71.79},'DE':{s:38.45,n:39.84,w:-75.79,e:-75.05},
       'FL':{s:24.52,n:31.00,w:-87.63,e:-80.03},'GA':{s:30.36,n:35.00,w:-85.61,e:-80.84},
       'HI':{s:18.91,n:22.24,w:-160.25,e:-154.81},'ID':{s:41.99,n:49.00,w:-117.24,e:-111.04},
-      'IL':{s:36.97,n:42.51,w:-91.51,e:-87.49},'IN':{s:37.77,n:41.76,w:-88.10,e:-84.78},
+      'IL':{s:36.97,n:42.51,w:-91.51,e:-87.52},'IN':{s:37.77,n:41.76,w:-88.10,e:-84.78},
       'IA':{s:40.38,n:43.50,w:-96.64,e:-90.14},'KS':{s:36.99,n:40.00,w:-102.05,e:-94.59},
       'KY':{s:36.50,n:39.15,w:-89.57,e:-81.96},'LA':{s:28.93,n:33.02,w:-94.04,e:-88.82},
       'ME':{s:43.06,n:47.46,w:-71.08,e:-66.95},'MD':{s:37.91,n:39.72,w:-79.49,e:-75.05},
@@ -511,8 +511,8 @@ router.get('/industrial-zones', async (req, res) => {
       'DC':{s:38.79,n:38.99,w:-77.12,e:-76.91}
     };
 
-    const radius = 40000;
-    const query = `[out:json][timeout:30];(way["landuse"="industrial"](around:${radius},${lat},${lng});way["landuse"="warehouse"](around:${radius},${lat},${lng});way["building"="warehouse"](around:${radius},${lat},${lng}););out center;`;
+    const radius = 25000;
+    const query = `[out:json][timeout:30];(way["landuse"="industrial"](around:${radius},${lat},${lng});way["landuse"="warehouse"](around:${radius},${lat},${lng}););out center;`;
     const https = require('https');
     const options = {
       hostname: 'overpass-api.de',
