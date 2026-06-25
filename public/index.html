@@ -679,7 +679,8 @@
 
   async function fetchAndShowZones(lat, lng, cityName) {
     try {
-      const res = await fetch(API + '/api/game/industrial-zones?lat=' + lat + '&lng=' + lng);
+      const state = document.getElementById('hqStateSelect') ? document.getElementById('hqStateSelect').value : '';
+      const res = await fetch(API + '/api/game/industrial-zones?lat=' + lat + '&lng=' + lng + '&state=' + state);
       const data = await res.json();
       if (!data.zones || data.zones.length === 0) {
         document.getElementById('zoneStatus').textContent = 'No industrial zones found near ' + cityName + '. Please choose a different city.';
