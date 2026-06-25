@@ -210,13 +210,14 @@
     .win-minimized { height: auto !important; }
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      background: rgba(0,180,220,0.1);
-      border-left: 1px solid var(--border);
+      -webkit-appearance: inner-spin-button;
       opacity: 1;
       cursor: pointer;
+      background: rgba(0,180,220,0.15);
+      border-left: 1px solid rgba(0,180,220,0.3);
+      width: 24px;
+      filter: invert(1) sepia(1) saturate(5) hue-rotate(155deg);
     }
-    input[type="number"] { -moz-appearance: textfield; }
 </style>
 <script src="/socket.io/socket.io.js"></script>
 </head>
