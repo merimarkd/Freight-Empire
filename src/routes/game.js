@@ -482,6 +482,13 @@ router.post('/admin/delete-company', async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
     await pool.query('UPDATE players SET current_company_id = NULL WHERE current_company_id = $1', [companyId]);
+    await pool.query('DELETE FROM market_orders WHERE company_id = $1', [companyId]);
+    await pool.query('DELETE FROM loan_payments WHERE company_id = $1', [companyId]);
+    await pool.query('DELETE FROM loans WHERE company_id = $1', [companyId]);
+    await pool.query('DELETE FROM transactions WHERE company_id = $1', [companyId]);
+    await pool.query('DELETE FROM compliance_strikes WHERE company_id = $1', [companyId]);
+    await pool.query('DELETE FROM drivers WHERE company_id = $1', [companyId]);
+    await pool.query('UPDATE companies SET owner_id = NULL WHERE id = $1', [companyId]);
     await pool.query('DELETE FROM companies WHERE id = $1', [companyId]);
     res.json({ success: true, message: 'Company permanently deleted' });
   } catch (error) {
