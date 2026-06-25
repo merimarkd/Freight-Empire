@@ -525,7 +525,7 @@ router.get('/industrial-zones', async (req, res) => {
         return dist < 50000;
       })
       .filter(z => !occupied.some(c => haversine(c.lat, c.lng, z.lat, z.lng) < 150))
-      .slice(0, 50);
+      ;
     res.json({ zones });
   } catch (error) {
     console.error('Industrial zones error:', error.message);
