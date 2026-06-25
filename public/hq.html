@@ -168,6 +168,13 @@
     .market-orders-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
     .market-orders-table th { color: var(--text-muted); text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); font-weight: 400; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
     .market-orders-table th:hover { color: var(--teal); }
+    .market-orders-table th { position: relative; user-select: none; white-space: nowrap; }
+    .market-orders-table th .sort-arrow { margin-left: 4px; opacity: 0.4; font-size: 0.7rem; }
+    .market-orders-table th.sort-asc .sort-arrow::after { content: '▲'; opacity: 1; }
+    .market-orders-table th.sort-desc .sort-arrow::after { content: '▼'; opacity: 1; }
+    .market-orders-table th .sort-arrow::after { content: '▲▼'; }
+    .col-resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; cursor: col-resize; background: transparent; }
+    .col-resize-handle:hover { background: rgba(0,180,220,0.3); }
     .market-orders-table td { padding: 5px 8px; border-bottom: 1px solid rgba(0,180,220,0.05); color: var(--text); }
     .market-orders-table tr:hover td { background: rgba(0,180,220,0.04); }
     .market-orders-table .price-sell { color: #e05555; }
@@ -1282,34 +1289,96 @@ async function loadMarketItem(itemId, itemName, category, subcategory, basePrice
     panel.innerHTML = `
       <div class="market-orders-section">
         <div class="market-orders-title">Sellers</div>
-        <table class="market-orders-table">
-          <thead><tr><th>Qty</th><th>Price/Unit</th><th>Company</th><th>Expires</th></tr></thead>
+        <table class="market-orders-table" id="sellersTable">
+          <thead><tr>
+            <th style="width:80px;">Distance<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:70px;">Qty<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:130px;">Price/Unit<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:220px;">Location<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:180px;">Company<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:120px;">Expires<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+          </tr></thead>
           <tbody>${data.sellers.length ? data.sellers.map(s => `
             <tr>
+              <td>${s.distance_miles ? s.distance_miles.toLocaleString() + ' mi' : '—'}</td>
               <td>${s.quantity.toLocaleString()}</td>
               <td class="price-sell">$${parseFloat(s.price_per_unit).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+              <td>${s.hq_city || '—'}, ${s.hq_state || '—'}</td>
               <td>${s.company_name}</td>
               <td>${formatExpiry(s.expires_at)}</td>
-            </tr>`).join('') : '<tr><td colspan="4" class="market-empty">No sell orders</td></tr>'}</tbody>
+            </tr>`).join('') : '<tr><td colspan="6" class="market-empty">No sell orders</td></tr>'}</tbody>
         </table>
       </div>
       <div class="market-orders-section">
         <div class="market-orders-title">Buyers</div>
-        <table class="market-orders-table">
-          <thead><tr><th>Qty</th><th>Price/Unit</th><th>Min Qty</th><th>Company</th><th>Expires</th></tr></thead>
+        <table class="market-orders-table" id="buyersTable">
+          <thead><tr>
+            <th style="width:80px;">Distance<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:70px;">Qty<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:130px;">Price/Unit<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:70px;">Min Qty<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:220px;">Location<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:180px;">Company<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+            <th style="width:120px;">Expires<span class="sort-arrow"></span><div class="col-resize-handle"></div></th>
+          </tr></thead>
           <tbody>${data.buyers.length ? data.buyers.map(b => `
             <tr>
+              <td>${b.distance_miles ? b.distance_miles.toLocaleString() + ' mi' : '—'}</td>
               <td>${b.quantity.toLocaleString()}</td>
               <td class="price-buy">$${parseFloat(b.price_per_unit).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
               <td>${b.min_quantity}</td>
+              <td>${b.hq_city || '—'}, ${b.hq_state || '—'}</td>
               <td>${b.company_name}</td>
               <td>${formatExpiry(b.expires_at)}</td>
-            </tr>`).join('') : '<tr><td colspan="5" class="market-empty">No buy orders</td></tr>'}</tbody>
+            </tr>`).join('') : '<tr><td colspan="7" class="market-empty">No buy orders</td></tr>'}</tbody>
         </table>
       </div>
     `;
+    initMarketTableFeatures();
     updateMarketTicker(itemName, basePrice, data.priceChange);
   } catch(e) { console.error('Market orders error:', e); }
+}
+
+function initMarketTableFeatures() {
+  // Column sorting
+  document.querySelectorAll('.market-orders-table thead th').forEach((th, i) => {
+    th.addEventListener('click', (e) => {
+      if (e.target.classList.contains('col-resize-handle')) return;
+      const table = th.closest('table');
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const asc = th.classList.contains('sort-asc');
+      table.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+      rows.sort((a, b) => {
+        const aVal = a.cells[i]?.textContent.trim() || '';
+        const bVal = b.cells[i]?.textContent.trim() || '';
+        const aNum = parseFloat(aVal.replace(/[^0-9.-]/g,''));
+        const bNum = parseFloat(bVal.replace(/[^0-9.-]/g,''));
+        if (!isNaN(aNum) && !isNaN(bNum)) return asc ? bNum - aNum : aNum - bNum;
+        return asc ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+  // Column resizing
+  document.querySelectorAll('.col-resize-handle').forEach(handle => {
+    let startX, startWidth, th;
+    handle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      th = handle.parentElement;
+      startX = e.clientX;
+      startWidth = th.offsetWidth;
+      const move = (e) => { th.style.width = Math.max(50, startWidth + e.clientX - startX) + 'px'; };
+      const stop = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', stop);
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', stop);
+    });
+  });
 }
 
 function updateMarketTicker(itemName, price, change) {
