@@ -208,6 +208,15 @@
     .win-context-divider { border-top: 1px solid var(--border); margin: 4px 0; }
     .win-minimized .window-content, .win-minimized .market-window, .win-minimized .ops-main { display: none !important; }
     .win-minimized { height: auto !important; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      background: rgba(0,180,220,0.1);
+      border-left: 1px solid var(--border);
+      opacity: 1;
+      cursor: pointer;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
 </style>
 <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -982,12 +991,14 @@ function makeDraggable(element) {
       const overLeft = rect.left < sidebarWidth;
       const overRight = rect.right > window.innerWidth - sidebarWidth;
       const overTop = rect.top < headerHeight;
-      if (overLeft || overRight || overTop) {
+      const overBottom = rect.bottom > window.innerHeight - 40;
+      if (overLeft || overRight || overTop || overBottom) {
         let safeX = rect.left;
         let safeY = rect.top;
         if (overLeft) safeX = sidebarWidth;
         if (overRight) safeX = window.innerWidth - sidebarWidth - rect.width;
         if (overTop) safeY = headerHeight;
+        if (overBottom) safeY = window.innerHeight - 40 - rect.height;
         element.style.transition = 'left 0.2s, top 0.2s';
         element.style.left = safeX + 'px';
         element.style.top = safeY + 'px';
@@ -1402,7 +1413,7 @@ function openMultibuy() {
     </div>
     <div class="window-content" style="display:flex;flex-direction:column;gap:12px;">
       <div style="color:var(--text-muted);font-size:0.8rem;">Enter items to buy (one per line, format: Item Name, Quantity)</div>
-      <textarea id="multibuyInput" style="flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text-hi);font-family:inherit;font-size:0.8rem;padding:8px;resize:none;border-radius:2px;min-height:150px;" placeholder="Kenworth T680, 1&#10;53ft Dry Van, 2"></textarea>
+      <textarea id="multibuyInput" style="flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text-hi);font-family:inherit;font-size:0.8rem;padding:8px;resize:none;border-radius:2px;min-height:150px;" placeholder=""></textarea>
       <button onclick="submitMultibuy()" style="padding:9px;background:rgba(0,180,220,0.15);border:1px solid var(--teal);color:var(--teal);font-family:inherit;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;border-radius:2px;">Process Multibuy</button>
     </div>
   `;

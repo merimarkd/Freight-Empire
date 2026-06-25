@@ -100,7 +100,7 @@ router.post('/order', authMiddleware, async (req, res) => {
     const { itemId, orderType, quantity, pricePerUnit, minQuantity, durationDays } = req.body;
     const playerId = req.user.playerId;
     const companyRes = await pool.query(
-      'SELECT id, cash FROM companies WHERE player_id = $1', [playerId]
+      'SELECT id, cash FROM companies WHERE owner_id = $1', [playerId]
     );
     if (companyRes.rows.length === 0) return res.status(400).json({ error: 'No company found' });
     const company = companyRes.rows[0];
@@ -127,7 +127,7 @@ router.post('/order', authMiddleware, async (req, res) => {
 router.get('/my-orders', authMiddleware, async (req, res) => {
   try {
     const playerId = req.user.playerId;
-    const companyRes = await pool.query('SELECT id FROM companies WHERE player_id = $1', [playerId]);
+    const companyRes = await pool.query('SELECT id FROM companies WHERE owner_id = $1', [playerId]);
     if (companyRes.rows.length === 0) return res.json({ orders: [] });
     const result = await pool.query(`
       SELECT mo.*, mi.name as item_name, mi.category, mi.subcategory
@@ -147,7 +147,7 @@ router.delete('/order/:orderId', authMiddleware, async (req, res) => {
   try {
     const { orderId } = req.params;
     const playerId = req.user.playerId;
-    const companyRes = await pool.query('SELECT id FROM companies WHERE player_id = $1', [playerId]);
+    const companyRes = await pool.query('SELECT id FROM companies WHERE owner_id = $1', [playerId]);
     if (companyRes.rows.length === 0) return res.status(400).json({ error: 'No company found' });
     const orderRes = await pool.query(
       'SELECT * FROM market_orders WHERE id = $1 AND company_id = $2',
