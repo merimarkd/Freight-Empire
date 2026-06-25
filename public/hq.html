@@ -1088,7 +1088,7 @@ function recalcTaskbarWidths() {
   const totalWidth = taskbar.offsetWidth;
   const itemWidth = Math.floor((totalWidth - (items.length * 2)) / items.length);
   items.forEach(item => item.style.width = itemWidth + 'px');
-
+}
 function showWindowMenu(e, win) {
   e.stopPropagation();
   document.querySelectorAll('.win-context-menu').forEach(m => m.remove());
