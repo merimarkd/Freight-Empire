@@ -204,7 +204,7 @@ router.post('/create-company', async (req, res) => {
     const decoded = require('jsonwebtoken').verify(token, 'freight-empire-secret-key-change-in-production');
     const ownerId = decoded.playerId;
     
-    const { name, username, hqCity, hqState, hqLatitude, hqLongitude, hqCounty, hqNeighborhood } = req.body;
+    const { name, username, hqCity, hqState, hqLatitude, hqLongitude, hqCounty, hqNeighborhood, locationLatitude, locationLongitude } = req.body;
     
     if (!name || !username || !ownerId) {
   return res.status(400).json({ error: 'Company name and username are required' });
@@ -225,8 +225,8 @@ const dotNumber = String(Math.floor(Math.random() * 90000000) + 10000000); // 8-
 const mcNumber = String(Math.floor(Math.random() * 9000000) + 1000000); // 7-digit number
 
 const companyResult = await pool.query(
-     'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash, hq_state, hq_city, hq_latitude, hq_longitude, hq_county, hq_neighborhood) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-     [name, dotNumber, mcNumber, ownerId, 500000, hqState, hqCity, hqLatitude, hqLongitude, hqCounty, hqNeighborhood]
+     'INSERT INTO companies (name, dot_number, mc_number, owner_id, cash, hq_state, hq_city, hq_latitude, hq_longitude, hq_county, hq_neighborhood, location_latitude, location_longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
+     [name, dotNumber, mcNumber, ownerId, 500000, hqState, hqCity, hqLatitude, hqLongitude, hqCounty, hqNeighborhood, locationLatitude, locationLongitude]
    );
     
     const company = companyResult.rows[0];
@@ -374,7 +374,7 @@ router.post('/switch-company', async (req, res) => {
  */
 router.get('/search-cities', async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, state } = req.query;
 
     if (!q || q.trim().length < 2) {
       return res.status(400).json({ error: 'Query must be at least 2 characters' });
@@ -386,7 +386,8 @@ router.get('/search-cities', async (req, res) => {
     }
 
     const query = encodeURIComponent(`${q}, USA`);
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxKey}&country=us&limit=10`;
+    const stateFilter = state ? `&stacks=places&region=${state}` : '';
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxKey}&country=us&limit=10${stateFilter}`;
 
     const response = await fetch(url);
     const data = await response.json();

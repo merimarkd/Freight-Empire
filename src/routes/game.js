@@ -475,6 +475,61 @@ router.post('/admin/auction-company', async (req, res) => {
 });
 
 
+// GET /api/game/industrial-zones - find industrial zones near coordinates
+router.get('/industrial-zones', async (req, res) => {
+  try {
+    const { lat, lng } = req.query;
+    if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' });
+    const delta = 0.3;
+    const south = parseFloat(lat) - delta;
+    const north = parseFloat(lat) + delta;
+    const west = parseFloat(lng) - delta;
+    const east = parseFloat(lng) + delta;
+    const query = `[out:json][timeout:15];way["landuse"="industrial"](${south},${west},${north},${east});out center 20;`;
+    const https = require('https');
+    const options = {
+      hostname: 'overpass-api.de',
+      path: '/api/interpreter?data=' + encodeURIComponent(query),
+      headers: { 'User-Agent': 'FreightEmpire/1.0 (game; contact@merimarkdigital.com)' }
+    };
+    const data = await new Promise((resolve, reject) => {
+      https.get(options, (r) => {
+        let d = '';
+        r.on('data', c => d += c);
+        r.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
+      }).on('error', reject);
+    });
+    const existingCompanies = await pool.query(
+      'SELECT location_latitude, location_longitude FROM companies WHERE location_latitude IS NOT NULL'
+    );
+    const occupied = existingCompanies.rows.map(c => ({
+      lat: parseFloat(c.location_latitude),
+      lng: parseFloat(c.location_longitude)
+    }));
+    const haversine = (lat1, lng1, lat2, lng2) => {
+      const R = 6371000;
+      const dLat = (lat2-lat1) * Math.PI/180;
+      const dLng = (lng2-lng1) * Math.PI/180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
+    const zones = (data.elements || [])
+      .filter(e => e.center)
+      .map(e => ({
+        lat: e.center.lat,
+        lng: e.center.lon,
+        name: e.tags && e.tags.name ? e.tags.name : null,
+        available: !occupied.some(c => haversine(c.lat, c.lng, e.center.lat, e.center.lon) < 150)
+      }))
+      .filter(z => z.available)
+      .slice(0, 20);
+    res.json({ zones });
+  } catch (error) {
+    console.error('Industrial zones error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/game/config - serve public config to frontend
 router.get('/config', async (req, res) => {
   res.json({ mapboxToken: process.env.MAPBOX_API_KEY });
