@@ -855,9 +855,14 @@
           return c;
         }
 
-        companyMiniMap.addImage('shield-interstate', makeShield('#1a3a8f','#ffffff','#ffffff','interstate'), {pixelRatio:2});
-        companyMiniMap.addImage('shield-us',         makeShield('#ffffff','#000000','#000000','us'),         {pixelRatio:2});
-        companyMiniMap.addImage('shield-state',      makeShield('#1a5c2a','#ffffff','#ffffff','state'),      {pixelRatio:2});
+        function canvasToImageData(canvas) {
+          const ctx = canvas.getContext('2d');
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          return { width: canvas.width, height: canvas.height, data: imgData.data };
+        }
+        companyMiniMap.addImage('shield-interstate', canvasToImageData(makeShield('#1a3a8f','#ffffff','#ffffff','interstate')));
+        companyMiniMap.addImage('shield-us',         canvasToImageData(makeShield('#ffffff','#000000','#000000','us')));
+        companyMiniMap.addImage('shield-state',      canvasToImageData(makeShield('#1a5c2a','#ffffff','#ffffff','state')));
 
         // Custom shield symbol layer on top of roads
         companyMiniMap.addLayer({
