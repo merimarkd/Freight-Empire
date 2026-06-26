@@ -765,6 +765,8 @@
       });
       companyMiniMap.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
       companyMiniMap.on('load', () => {
+        // DEBUG - remove after confirming layer names
+        console.log('MAP LAYERS:', companyMiniMap.getStyle().layers.map(l => l.id).join('\n'));
         // Highlight Interstates + US Routes in amber
         if (companyMiniMap.getLayer('road-motorway-trunk')) {
           companyMiniMap.setPaintProperty('road-motorway-trunk', 'line-color', '#e87c2a');
