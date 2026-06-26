@@ -765,6 +765,22 @@
       });
       companyMiniMap.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
       companyMiniMap.on('load', () => {
+        // Highlight Interstates + US Routes in amber
+        if (companyMiniMap.getLayer('road-motorway-trunk')) {
+          companyMiniMap.setPaintProperty('road-motorway-trunk', 'line-color', '#e87c2a');
+          companyMiniMap.setPaintProperty('road-motorway-trunk', 'line-width', 3);
+        }
+        if (companyMiniMap.getLayer('road-motorway-trunk-case')) {
+          companyMiniMap.setPaintProperty('road-motorway-trunk-case', 'line-color', '#a85000');
+        }
+        // Highlight State Routes in teal
+        if (companyMiniMap.getLayer('road-primary')) {
+          companyMiniMap.setPaintProperty('road-primary', 'line-color', '#00b4dc');
+          companyMiniMap.setPaintProperty('road-primary', 'line-width', 2);
+        }
+        if (companyMiniMap.getLayer('road-primary-case')) {
+          companyMiniMap.setPaintProperty('road-primary-case', 'line-color', '#006880');
+        }
         companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
       });
     } else {
