@@ -637,8 +637,8 @@
       companyMiniMap = new mapboxgl.Map({
         container: 'company-minimap',
         style: 'mapbox://styles/mapbox/dark-v11',
-        center: [lng, lat],
-        zoom: 12
+        center: [lng || -98.5795, lat || 39.8283],
+        zoom: lat ? 12 : 4,
       });
       companyMiniMap.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
       companyMiniMap.on('load', () => {
