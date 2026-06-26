@@ -400,80 +400,9 @@
           <input type="text" id="companyName" placeholder="e.g., Acme Trucking LLC">
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div>
-          <label>State</label>
-          <input type="hidden" id="hqStateSelect" value="">
-          <div class="custom-select-wrap">
-            <button type="button" class="custom-select-btn" id="stateSelectBtn" onclick="toggleStateDropdown()">
-              <span id="stateSelectLabel">-- Select State --</span>
-              <span class="arrow">&#9660;</span>
-            </button>
-            <div class="custom-select-dropdown" id="stateDropdown">
-              <div class="custom-select-option" onclick="selectState('','-- Select State --')">-- Select State --</div>
-              <div class="custom-select-option" onclick="selectState('AL','Alabama')">Alabama</div>
-              <div class="custom-select-option" onclick="selectState('AK','Alaska')">Alaska</div>
-              <div class="custom-select-option" onclick="selectState('AZ','Arizona')">Arizona</div>
-              <div class="custom-select-option" onclick="selectState('AR','Arkansas')">Arkansas</div>
-              <div class="custom-select-option" onclick="selectState('CA','California')">California</div>
-              <div class="custom-select-option" onclick="selectState('CO','Colorado')">Colorado</div>
-              <div class="custom-select-option" onclick="selectState('CT','Connecticut')">Connecticut</div>
-              <div class="custom-select-option" onclick="selectState('DE','Delaware')">Delaware</div>
-              <div class="custom-select-option" onclick="selectState('FL','Florida')">Florida</div>
-              <div class="custom-select-option" onclick="selectState('GA','Georgia')">Georgia</div>
-              <div class="custom-select-option" onclick="selectState('HI','Hawaii')">Hawaii</div>
-              <div class="custom-select-option" onclick="selectState('ID','Idaho')">Idaho</div>
-              <div class="custom-select-option" onclick="selectState('IL','Illinois')">Illinois</div>
-              <div class="custom-select-option" onclick="selectState('IN','Indiana')">Indiana</div>
-              <div class="custom-select-option" onclick="selectState('IA','Iowa')">Iowa</div>
-              <div class="custom-select-option" onclick="selectState('KS','Kansas')">Kansas</div>
-              <div class="custom-select-option" onclick="selectState('KY','Kentucky')">Kentucky</div>
-              <div class="custom-select-option" onclick="selectState('LA','Louisiana')">Louisiana</div>
-              <div class="custom-select-option" onclick="selectState('ME','Maine')">Maine</div>
-              <div class="custom-select-option" onclick="selectState('MD','Maryland')">Maryland</div>
-              <div class="custom-select-option" onclick="selectState('MA','Massachusetts')">Massachusetts</div>
-              <div class="custom-select-option" onclick="selectState('MI','Michigan')">Michigan</div>
-              <div class="custom-select-option" onclick="selectState('MN','Minnesota')">Minnesota</div>
-              <div class="custom-select-option" onclick="selectState('MS','Mississippi')">Mississippi</div>
-              <div class="custom-select-option" onclick="selectState('MO','Missouri')">Missouri</div>
-              <div class="custom-select-option" onclick="selectState('MT','Montana')">Montana</div>
-              <div class="custom-select-option" onclick="selectState('NE','Nebraska')">Nebraska</div>
-              <div class="custom-select-option" onclick="selectState('NV','Nevada')">Nevada</div>
-              <div class="custom-select-option" onclick="selectState('NH','New Hampshire')">New Hampshire</div>
-              <div class="custom-select-option" onclick="selectState('NJ','New Jersey')">New Jersey</div>
-              <div class="custom-select-option" onclick="selectState('NM','New Mexico')">New Mexico</div>
-              <div class="custom-select-option" onclick="selectState('NY','New York')">New York</div>
-              <div class="custom-select-option" onclick="selectState('NC','North Carolina')">North Carolina</div>
-              <div class="custom-select-option" onclick="selectState('ND','North Dakota')">North Dakota</div>
-              <div class="custom-select-option" onclick="selectState('OH','Ohio')">Ohio</div>
-              <div class="custom-select-option" onclick="selectState('OK','Oklahoma')">Oklahoma</div>
-              <div class="custom-select-option" onclick="selectState('OR','Oregon')">Oregon</div>
-              <div class="custom-select-option" onclick="selectState('PA','Pennsylvania')">Pennsylvania</div>
-              <div class="custom-select-option" onclick="selectState('RI','Rhode Island')">Rhode Island</div>
-              <div class="custom-select-option" onclick="selectState('SC','South Carolina')">South Carolina</div>
-              <div class="custom-select-option" onclick="selectState('SD','South Dakota')">South Dakota</div>
-              <div class="custom-select-option" onclick="selectState('TN','Tennessee')">Tennessee</div>
-              <div class="custom-select-option" onclick="selectState('TX','Texas')">Texas</div>
-              <div class="custom-select-option" onclick="selectState('UT','Utah')">Utah</div>
-              <div class="custom-select-option" onclick="selectState('VT','Vermont')">Vermont</div>
-              <div class="custom-select-option" onclick="selectState('VA','Virginia')">Virginia</div>
-              <div class="custom-select-option" onclick="selectState('WA','Washington')">Washington</div>
-              <div class="custom-select-option" onclick="selectState('WV','West Virginia')">West Virginia</div>
-              <div class="custom-select-option" onclick="selectState('WI','Wisconsin')">Wisconsin</div>
-              <div class="custom-select-option" onclick="selectState('WY','Wyoming')">Wyoming</div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <label>City</label>
-          <div class="form-group">
-            <input type="text" id="hqSearch" placeholder="Search city..." autocomplete="off" disabled>
-            <div class="search-results" id="searchResults"></div>
-          </div>
-        </div>
-      </div>
-      <div id="zoneSection" style="display:none;">
-        <label>HQ Location <span style="color:var(--text-muted);font-size:0.8rem;">— Click the map to place your HQ</span></label>
+
+      <div id="zoneSection">
+        <label>HQ Location <span style="color:var(--text-muted);font-size:0.8rem;">— Click the map to place your HQ. Must be within 3 miles of a major highway.</span></label>
         <div id="company-minimap"></div>
         <div id="zoneStatus" style="color:var(--text-muted);font-size:0.82rem;margin-top:6px;text-align:center;">Loading industrial zones...</div>
       </div>
@@ -541,6 +470,7 @@
   
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  if (id === 'companyScreen') loadMinimap();
 }
 
   function showError(screenId, msg) {
@@ -661,15 +591,15 @@
         body: JSON.stringify({
   name: name,
   username: document.getElementById("companyUsername").value.trim(),
-  hqCity: selectedLocation.city || selectedLocation.name,
+  hqCity: selectedLocation.city || null,
   hqState: selectedLocation.state || null,
   hqLatitude: selectedLocation.latitude,
   hqLongitude: selectedLocation.longitude,
   hqCounty: selectedLocation.county || null,
   hqNeighborhood: selectedLocation.neighborhood || null,
-  locationLatitude: selectedLocation.locationLat || null,
-  locationLongitude: selectedLocation.locationLng || null,
-  hqZone: selectedLocation.zoneName || null
+  locationLatitude: selectedLocation.locationLat,
+  locationLongitude: selectedLocation.locationLng,
+  hqZone: selectedLocation.address || null
 })
       });
       const data = await res.json();
@@ -686,68 +616,14 @@
     localStorage.removeItem("authToken");
     selectedLocation = null;
     document.getElementById("companyName").value = "";
-    document.getElementById("hqSearch").value = "";
     document.getElementById("selectedLocation").classList.remove("active");
     switchScreen(null, "loginScreen");
   }
 
-  document.getElementById("hqSearch").addEventListener("input", async function(e) {
-    const q = e.target.value.trim();
-    const results = document.getElementById("searchResults");
-    if (q.length < 2) { results.classList.remove("active"); selectedLocation = null; document.getElementById("createBtn").disabled = true; return; }
-    clearTimeout(searchTimeout);
-    results.innerHTML = "<div class=\"search-item\">Searching...</div>";
-    results.classList.add("active");
-    searchTimeout = setTimeout(async function() {
-      try {
-        const state = document.getElementById('hqStateSelect') ? document.getElementById('hqStateSelect').value : '';
-        const res = await fetch(API + "/api/auth/search-cities?q=" + encodeURIComponent(q) + (state ? "&state=" + state : ''));
-        const data = await res.json();
-        if (!data.cities || data.cities.length === 0) { results.innerHTML = "<div class=\"search-item\">No results</div>"; return; }
-        results.innerHTML = data.cities.map(c => "<div class=\"search-item\" onclick=\"selectLocation(this, '" + c.name.replace(/'/g,"\\'" ) + "', " + c.latitude + ", " + c.longitude + ", '" + (c.county||'').replace(/'/g,"\\'") + "', '" + (c.neighborhood||'').replace(/'/g,"\\'") + "', '" + (c.city||'').replace(/'/g,"\\'") + "', '" + (c.state||'').replace(/'/g,"\\'") + "')\">" + c.name + "</div>").join("");
-      } catch (e) { results.innerHTML = "<div class=\"search-item\">Error</div>"; }
-    }, 300);
-  });
-
   let companyMiniMap = null;
   let locationMarker = null;
 
-  function toggleStateDropdown() {
-    const btn = document.getElementById('stateSelectBtn');
-    const dropdown = document.getElementById('stateDropdown');
-    btn.classList.toggle('open');
-    dropdown.classList.toggle('open');
-  }
 
-  function selectState(value, label) {
-    document.getElementById('hqStateSelect').value = value;
-    document.getElementById('stateSelectLabel').textContent = label;
-    document.getElementById('stateSelectBtn').classList.remove('open');
-    document.getElementById('stateDropdown').classList.remove('open');
-    document.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
-    event.target.classList.add('selected');
-    onStateChange();
-  }
-
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.custom-select-wrap')) {
-      document.getElementById('stateSelectBtn') && document.getElementById('stateSelectBtn').classList.remove('open');
-      document.getElementById('stateDropdown') && document.getElementById('stateDropdown').classList.remove('open');
-    }
-  });
-
-  function onStateChange() {
-    const state = document.getElementById('hqStateSelect').value;
-    const cityInput = document.getElementById('hqSearch');
-    cityInput.disabled = !state;
-    cityInput.value = '';
-    selectedLocation = null;
-    if (locationMarker) { locationMarker.remove(); locationMarker = null; }
-    document.getElementById('createBtn').disabled = true;
-    document.getElementById('zoneSection').style.display = 'none';
-    document.getElementById('selectedLocation').classList.remove('active');
-    if (companyMiniMap) { companyMiniMap.remove(); companyMiniMap = null; }
-  }
 
   async function loadMinimap(lat, lng) {
     document.getElementById('zoneSection').style.display = 'block';
@@ -839,36 +715,38 @@
     el.className = 'zone-marker';
     locationMarker = new mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(companyMiniMap);
     try {
-      const state = document.getElementById('hqStateSelect').value;
+      const state = '';
       const res = await fetch(API + '/api/game/validate-location?lat=' + lat + '&lng=' + lng + '&state=' + state);
       const data = await res.json();
       if (!data.valid) {
         el.style.background = 'rgba(200,64,64,0.4)';
         el.style.borderColor = '#c84040';
         document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--danger)">' + data.message + '</span>';
-        selectedLocation = Object.assign({}, selectedLocation, { locationLat: null, locationLng: null, zoneName: null });
+        selectedLocation = null;
         return;
       }
       el.classList.add('selected');
-      selectedLocation = Object.assign({}, selectedLocation, { locationLat: lat, locationLng: lng, zoneName: data.address });
+      selectedLocation = {
+        locationLat: lat,
+        locationLng: lng,
+        address: data.address,
+        city: data.hqCity,
+        state: data.hqState,
+        county: data.hqCounty,
+        neighborhood: data.hqNeighborhood,
+        latitude: lat,
+        longitude: lng
+      };
       document.getElementById('locationName').textContent = data.address;
       document.getElementById('selectedLocation').classList.add('active');
-      document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--teal)">&#10003; ' + data.highwayType + ' ' + data.nearestHighway + ' is ' + data.distanceMiles + ' mi away</span>';
+      document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--teal)">&#10003; ' + data.highwayType + ' ' + data.nearestHighway + ' is ' + data.distanceMiles + ' mi away — ' + data.address + '</span>';
       document.getElementById('createBtn').disabled = false;
     } catch(e) {
       document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--danger)">Error validating location. Please try again.</span>';
     }
   }
 
-  function selectLocation(el, name, lat, lng, county, neighborhood, city, state) {
-    selectedLocation = { name: name, latitude: lat, longitude: lng, county: county, neighborhood: neighborhood, city: city, state: state };
-    document.getElementById("hqSearch").value = city || name;
-    document.getElementById("searchResults").classList.remove("active");
-    document.getElementById("locationName").textContent = name;
-    document.getElementById("selectedLocation").classList.add("active");
-    document.getElementById("createBtn").disabled = true;
-    loadMinimap(lat, lng);
-  }
+
 
   document.addEventListener("click", function(e) {
     if (!e.target.closest(".form-group")) {

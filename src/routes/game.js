@@ -941,22 +941,29 @@ router.get('/validate-location', async (req, res) => {
     const geoRes = await fetch(geoUrl);
     const geoData = await geoRes.json();
     let address = null;
+    let hqCity = null, hqState = null, hqZip = null, hqCounty = null, hqNeighborhood = null;
     const feature = geoData.features && geoData.features[0];
     if (feature) {
       const context = feature.context || [];
       const postcodeCtx = context.find(c => c.id && c.id.startsWith('postcode'));
       const placeCtx = context.find(c => c.id && c.id.startsWith('place'));
       const regionCtx = context.find(c => c.id && c.id.startsWith('region'));
+      const districtCtx = context.find(c => c.id && c.id.startsWith('district'));
+      const neighborhoodCtx = context.find(c => c.id && c.id.startsWith('neighborhood'));
       const streetName = feature.text || 'Industrial Blvd';
       const streetNum = (Math.abs(Math.round(latF * lngF * 100)) % 8900) + 100;
-      const zip = postcodeCtx ? postcodeCtx.text : generateZip(state);
-      const city = placeCtx ? placeCtx.text : '';
-      const stateAbbr = regionCtx ? (regionCtx.short_code ? regionCtx.short_code.replace('US-', '') : (state || '')) : (state || '');
-      address = streetNum + ' ' + streetName + ', ' + city + ', ' + stateAbbr + ' ' + zip;
+      hqZip = postcodeCtx ? postcodeCtx.text : generateZip(state);
+      hqCity = placeCtx ? placeCtx.text : '';
+      hqState = regionCtx ? (regionCtx.short_code ? regionCtx.short_code.replace('US-', '') : (state || '')) : (state || '');
+      hqCounty = districtCtx ? districtCtx.text : null;
+      hqNeighborhood = neighborhoodCtx ? neighborhoodCtx.text : null;
+      address = streetNum + ' ' + streetName + ', ' + hqCity + ', ' + hqState + ' ' + hqZip;
     } else {
-      address = (Math.floor(Math.random() * 8900) + 100) + ' Industrial Blvd, ' + generateZip(state);
+      hqZip = generateZip(state);
+      hqState = state || null;
+      address = (Math.floor(Math.random() * 8900) + 100) + ' Industrial Blvd, ' + hqZip;
     }
-    res.json({ valid: true, address, nearestHighway: hwName, highwayType: hwLabel, distanceMiles: distMiles });
+    res.json({ valid: true, address, nearestHighway: hwName, highwayType: hwLabel, distanceMiles: distMiles, hqCity, hqState, hqZip, hqCounty, hqNeighborhood });
   } catch (error) {
     console.error('Validate location error:', error.message);
     res.status(500).json({ error: error.message });
