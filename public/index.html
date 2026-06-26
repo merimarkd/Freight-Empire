@@ -809,9 +809,6 @@
           '<div><span style="display:inline-block;width:24px;height:3px;background:#00b4dc;vertical-align:middle;margin-right:8px;"></span><span style="color:#d4e0e8;">State Route</span></div>';
         document.getElementById('company-minimap').appendChild(legend);
         companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
-        });
-
-        companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
       });
     } else {
       companyMiniMap.flyTo({ center: [lng, lat], zoom: 12 });
