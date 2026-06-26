@@ -801,115 +801,14 @@
               'primary',  '#1a5c2a',
               '#333333']);
         }
-
-        // [removed canvas shields]
-        function makeShield_disabled(bgColor, borderColor, textColor, shape) {
-          const w = 64, h = 44;
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          const ctx = c.getContext('2d');
-          ctx.clearRect(0, 0, w, h);
-          if (shape === 'interstate') {
-            // Blue interstate shield shape
-            ctx.beginPath();
-            ctx.moveTo(4, 6);
-            ctx.lineTo(w-4, 6);
-            ctx.lineTo(w-2, 14);
-            ctx.lineTo(w-2, h-6);
-            ctx.quadraticCurveTo(w-2, h-2, w-6, h-2);
-            ctx.lineTo(6, h-2);
-            ctx.quadraticCurveTo(2, h-2, 2, h-6);
-            ctx.lineTo(2, 14);
-            ctx.closePath();
-            ctx.fillStyle = bgColor;
-            ctx.fill();
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            // Top notch
-            ctx.beginPath();
-            ctx.moveTo(4, 6);
-            ctx.quadraticCurveTo(w/2, 0, w-4, 6);
-            ctx.fillStyle = borderColor;
-            ctx.fill();
-          } else if (shape === 'us') {
-            // US route pentagon shield
-            ctx.beginPath();
-            ctx.moveTo(w/2, 2);
-            ctx.lineTo(w-2, 10);
-            ctx.lineTo(w-2, h-2);
-            ctx.lineTo(2, h-2);
-            ctx.lineTo(2, 10);
-            ctx.closePath();
-            ctx.fillStyle = bgColor;
-            ctx.fill();
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          } else {
-            // State route rounded rectangle
-            const r = 5;
-            ctx.beginPath();
-            ctx.moveTo(r+2, 2);
-            ctx.lineTo(w-r-2, 2);
-            ctx.quadraticCurveTo(w-2, 2, w-2, r+2);
-            ctx.lineTo(w-2, h-r-2);
-            ctx.quadraticCurveTo(w-2, h-2, w-r-2, h-2);
-            ctx.lineTo(r+2, h-2);
-            ctx.quadraticCurveTo(2, h-2, 2, h-r-2);
-            ctx.lineTo(2, r+2);
-            ctx.quadraticCurveTo(2, 2, r+2, 2);
-            ctx.closePath();
-            ctx.fillStyle = bgColor;
-            ctx.fill();
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          }
-          return c;
-        }
-
-        function canvasToImageData(canvas) {
-          const ctx = canvas.getContext('2d');
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          return { width: canvas.width, height: canvas.height, data: imgData.data };
-        }
-        companyMiniMap.addImage('shield-interstate', canvasToImageData(makeShield('#1a3a8f','#ffffff','#ffffff','interstate')));
-        companyMiniMap.addImage('shield-us',         canvasToImageData(makeShield('#ffffff','#000000','#000000','us')));
-        companyMiniMap.addImage('shield-state',      canvasToImageData(makeShield('#1a5c2a','#ffffff','#ffffff','state')));
-
-        // Custom shield symbol layer on top of roads
-        companyMiniMap.addLayer({
-          id: 'road-shields-custom',
-          type: 'symbol',
-          source: 'composite',
-          'source-layer': 'road',
-          filter: ['all',
-            ['in', ['get', 'class'], ['literal', ['motorway','trunk','primary']]],
-            ['has', 'ref']
-          ],
-          layout: {
-            'icon-image': ['match', ['get', 'class'],
-              'motorway', 'shield-interstate',
-              'trunk',    'shield-us',
-              'shield-state'
-            ],
-            'icon-text-fit': 'both',
-            'icon-text-fit-padding': [4, 6, 4, 6],
-            'text-field': ['get', 'ref'],
-            'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'],
-            'text-size': ['interpolate', ['linear'], ['zoom'], 8, 10, 14, 14],
-            'text-color': ['match', ['get', 'class'],
-              'motorway', '#ffffff',
-              'trunk',    '#000000',
-              '#ffffff'
-            ],
-            'symbol-placement': 'line',
-            'symbol-spacing': ['interpolate', ['linear'], ['zoom'], 8, 300, 14, 150],
-            'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.7, 14, 1.2],
-            'icon-allow-overlap': false,
-            'text-allow-overlap': false,
-          }
+        // Add map legend
+        const legend = document.createElement('div');
+        legend.style.cssText = 'position:absolute;bottom:40px;left:10px;background:rgba(8,12,18,0.92);border:1px solid rgba(0,180,220,0.3);padding:8px 12px;font-family:Courier New,monospace;font-size:11px;z-index:10;pointer-events:none;';
+        legend.innerHTML = '<div style="color:#a8b4c0;letter-spacing:0.1em;margin-bottom:6px;">HIGHWAY LEGEND</div>' +
+          '<div style="margin-bottom:4px;"><span style="display:inline-block;width:24px;height:3px;background:#e87c2a;vertical-align:middle;margin-right:8px;"></span><span style="color:#d4e0e8;">Interstate / US Route</span></div>' +
+          '<div><span style="display:inline-block;width:24px;height:3px;background:#00b4dc;vertical-align:middle;margin-right:8px;"></span><span style="color:#d4e0e8;">State Route</span></div>';
+        document.getElementById('company-minimap').appendChild(legend);
+        companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
         });
 
         companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
