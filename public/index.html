@@ -765,24 +765,24 @@
       });
       companyMiniMap.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
       companyMiniMap.on('load', () => {
-        // DEBUG - remove after confirming layer names
-        console.log('MAP LAYERS:', companyMiniMap.getStyle().layers.map(l => l.id).join('\n'));
-        // Highlight Interstates + US Routes in amber
-        if (companyMiniMap.getLayer('road-motorway-trunk')) {
-          companyMiniMap.setPaintProperty('road-motorway-trunk', 'line-color', '#e87c2a');
-          companyMiniMap.setPaintProperty('road-motorway-trunk', 'line-width', 3);
-        }
-        if (companyMiniMap.getLayer('road-motorway-trunk-case')) {
-          companyMiniMap.setPaintProperty('road-motorway-trunk-case', 'line-color', '#a85000');
-        }
-        // Highlight State Routes in teal
-        if (companyMiniMap.getLayer('road-primary')) {
-          companyMiniMap.setPaintProperty('road-primary', 'line-color', '#00b4dc');
-          companyMiniMap.setPaintProperty('road-primary', 'line-width', 2);
-        }
-        if (companyMiniMap.getLayer('road-primary-case')) {
-          companyMiniMap.setPaintProperty('road-primary-case', 'line-color', '#006880');
-        }
+        const roadColorExpr = ['match', ['get', 'class'],
+          'motorway', '#e87c2a',
+          'trunk',    '#e87c2a',
+          'primary',  '#00b4dc',
+          '#2a2d2e'
+        ];
+        const roadWidthExpr = ['match', ['get', 'class'],
+          'motorway', 4,
+          'trunk',    4,
+          'primary',  2.5,
+          1
+        ];
+        ['road-simple', 'bridge-simple', 'tunnel-simple'].forEach(layer => {
+          if (companyMiniMap.getLayer(layer)) {
+            companyMiniMap.setPaintProperty(layer, 'line-color', roadColorExpr);
+            companyMiniMap.setPaintProperty(layer, 'line-width', roadWidthExpr);
+          }
+        });
         companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
       });
     } else {
