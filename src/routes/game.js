@@ -559,13 +559,32 @@ router.get('/industrial-zones', async (req, res) => {
       const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     };
+    // Keywords that disqualify a named OSM feature from being a valid Class 8 zone
+    const excludeKeywords = [
+      'park', 'maintenance', 'school', 'church', 'cemetery', 'garden',
+      'recreation', 'playground', 'hospital', 'clinic', 'museum', 'library',
+      'temple', 'mosque', 'synagogue', 'community', 'center', 'centre',
+      'terminal', 'passenger', 'utility', 'water', 'sewage', 'substation',
+      'depot', 'yard', 'pumping', 'treatment', 'shelter', 'fire', 'police'
+    ];
+
     const bounds = state ? stateBounds[state] : null;
     const rawZones = (data.elements || [])
       .filter(e => e.center || (e.lat && e.lon))
+      .filter(e => {
+        // Filter out tiny zones (fewer than 6 nodes = too small for Class 8 trucks)
+        if (e.nodes && e.nodes.length < 6) return false;
+        // Filter out named zones with non-industrial keywords
+        if (e.tags && e.tags.name) {
+          const nameLower = e.tags.name.toLowerCase();
+          if (excludeKeywords.some(kw => nameLower.includes(kw))) return false;
+        }
+        return true;
+      })
       .map(e => ({
         lat: e.center ? e.center.lat : e.lat,
         lng: e.center ? e.center.lon : e.lon,
-        name: e.tags && e.tags.name ? e.tags.name : null,
+        name: null, // Strip all OSM names — zones are numbered sequentially
       }))
       .filter(z => {
         if (bounds) {
