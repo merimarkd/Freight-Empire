@@ -528,9 +528,9 @@ router.get('/industrial-zones', async (req, res) => {
     const osmId = state && stateOsmIds[state] ? 3600000000 + stateOsmIds[state] : null;
     let query;
     if (osmId) {
-      query = `[out:json][timeout:30];area(${osmId})->.st;(way["landuse"="industrial"](around:${radius},${lat},${lng})(area.st);way["landuse"="warehouse"](around:${radius},${lat},${lng})(area.st););out center;`;
+      query = `[out:json][timeout:30];area(${osmId})->.st;(way["landuse"="industrial"](around:${radius},${lat},${lng})(area.st)(if: length() > 500);way["landuse"="warehouse"](around:${radius},${lat},${lng})(area.st)(if: length() > 500););out center;`;
     } else {
-      query = `[out:json][timeout:30];(way["landuse"="industrial"](around:${radius},${lat},${lng});way["landuse"="warehouse"](around:${radius},${lat},${lng}););out center;`;
+      query = `[out:json][timeout:30];(way["landuse"="industrial"](around:${radius},${lat},${lng})(if: length() > 500);way["landuse"="warehouse"](around:${radius},${lat},${lng})(if: length() > 500););out center;`;
     }
     const https = require('https');
     const options = {
