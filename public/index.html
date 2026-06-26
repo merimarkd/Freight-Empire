@@ -753,7 +753,7 @@
     document.getElementById('zoneStatus').textContent = 'Click anywhere on the map to place your HQ.';
     if (locationMarker) { locationMarker.remove(); locationMarker = null; }
     document.getElementById('createBtn').disabled = true;
-
+    document.getElementById('zoneStatus').textContent = 'Click anywhere on the map to place your HQ.';
     if (!companyMiniMap) {
       const cfg = await fetch(API + '/api/game/config').then(r => r.json());
       mapboxgl.accessToken = cfg.mapboxToken;
@@ -783,13 +783,27 @@
             companyMiniMap.setPaintProperty(layer, 'line-width', roadWidthExpr);
           }
         });
-        // Hide default road labels
+        // Style road labels as GPS shields using text + halo
         if (companyMiniMap.getLayer('road-label-simple')) {
-          companyMiniMap.setLayoutProperty('road-label-simple', 'visibility', 'none');
+          companyMiniMap.setLayoutProperty('road-label-simple', 'visibility', 'visible');
+          companyMiniMap.setLayoutProperty('road-label-simple', 'text-field', ['get', 'ref']);
+          companyMiniMap.setLayoutProperty('road-label-simple', 'text-font', ['DIN Pro Bold', 'Arial Unicode MS Bold']);
+          companyMiniMap.setLayoutProperty('road-label-simple', 'text-size',
+            ['interpolate', ['linear'], ['zoom'], 7, 9, 14, 13]);
+          companyMiniMap.setPaintProperty('road-label-simple', 'text-color',
+            ['match', ['get', 'class'], 'trunk', '#000000', '#ffffff']);
+          companyMiniMap.setPaintProperty('road-label-simple', 'text-halo-width', 6);
+          companyMiniMap.setPaintProperty('road-label-simple', 'text-halo-blur', 0);
+          companyMiniMap.setPaintProperty('road-label-simple', 'text-halo-color',
+            ['match', ['get', 'class'],
+              'motorway', '#1a3a8f',
+              'trunk',    '#e8e8e8',
+              'primary',  '#1a5c2a',
+              '#333333']);
         }
 
-        // Draw GPS-style shield images on canvas and register with map
-        function makeShield(bgColor, borderColor, textColor, shape) {
+        // [removed canvas shields]
+        function makeShield_disabled(bgColor, borderColor, textColor, shape) {
           const w = 64, h = 44;
           const c = document.createElement('canvas');
           c.width = w; c.height = h;
