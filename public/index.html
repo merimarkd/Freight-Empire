@@ -403,9 +403,7 @@
 
       <div id="zoneSection">
         <label>HQ Location <span style="color:var(--text-muted);font-size:0.8rem;">— Click the map to place your HQ. Must be within 3 miles of a major highway.</span></label>
-        <div id="company-minimap" style="position:relative;">
-          <button id="satelliteToggle" onclick="toggleSatellite()" style="position:absolute;top:10px;left:10px;z-index:10;background:rgba(8,12,18,0.92);border:1px solid rgba(0,180,220,0.4);color:#00b4dc;font-family:Courier New,monospace;font-size:0.75rem;letter-spacing:0.1em;padding:6px 12px;cursor:pointer;text-transform:uppercase;width:auto;">SATELLITE</button>
-        </div>
+        <div id="company-minimap"></div>
         <div id="zoneStatus" style="color:var(--text-muted);font-size:0.82rem;margin-top:6px;text-align:center;">Loading industrial zones...</div>
       </div>
       <div class="selected-location" id="selectedLocation" style="margin-top:8px;"><strong>Location:</strong> <span id="locationName"></span></div>
@@ -624,84 +622,7 @@
 
   let companyMiniMap = null;
   let locationMarker = null;
-  let isSatellite = false;
 
-  function toggleSatellite() {
-    if (!companyMiniMap) return;
-    isSatellite = !isSatellite;
-    const btn = document.getElementById('satelliteToggle');
-    if (isSatellite) {
-      companyMiniMap.setStyle('mapbox://styles/mapbox/satellite-streets-v12');
-      btn.style.color = '#e87c2a';
-      btn.style.borderColor = 'rgba(232,124,42,0.6)';
-      btn.textContent = 'MAP';
-      // Re-apply road colors after style loads
-      companyMiniMap.once('style.load', applyRoadStyles);
-    } else {
-      companyMiniMap.setStyle('mapbox://styles/mapbox/dark-v11');
-      btn.style.color = '#00b4dc';
-      btn.style.borderColor = 'rgba(0,180,220,0.4)';
-      btn.textContent = 'SATELLITE';
-      companyMiniMap.once('style.load', applyRoadStyles);
-    }
-  }
-
-  function applyRoadStyles() {
-    const roadColorExpr = ['match', ['get', 'class'],
-      'motorway', '#e87c2a',
-      'trunk',    '#e87c2a',
-      'primary',  '#00b4dc',
-      '#2a2d2e'
-    ];
-    const roadWidthExpr = ['match', ['get', 'class'],
-      'motorway', 4,
-      'trunk',    4,
-      'primary',  2.5,
-      1
-    ];
-    ['road-simple', 'bridge-simple', 'tunnel-simple'].forEach(layer => {
-      if (companyMiniMap.getLayer(layer)) {
-        companyMiniMap.setPaintProperty(layer, 'line-color', roadColorExpr);
-        companyMiniMap.setPaintProperty(layer, 'line-width', roadWidthExpr);
-      }
-    });
-    // Route number labels
-    if (!companyMiniMap.getLayer('route-numbers')) {
-      companyMiniMap.addLayer({
-        id: 'route-numbers',
-        type: 'symbol',
-        source: 'composite',
-        'source-layer': 'road',
-        filter: ['all',
-          ['in', ['get', 'class'], ['literal', ['motorway','trunk','primary']]],
-          ['!=', ['get', 'ref'], null]
-        ],
-        minzoom: 7,
-        layout: {
-          'symbol-placement': 'line',
-          'symbol-spacing': 200,
-          'text-field': ['get', 'ref'],
-          'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 7, 10, 14, 13],
-          'text-rotation-alignment': 'viewport',
-          'text-pitch-alignment': 'viewport',
-        },
-        paint: {
-          'text-color': ['match', ['get', 'class'], 'trunk', '#000000', '#ffffff'],
-          'text-halo-color': ['match', ['get', 'class'],
-            'motorway', '#1a3a8f',
-            'trunk',    '#dddddd',
-            'primary',  '#1a5c2a',
-            '#333333'],
-          'text-halo-width': 5,
-          'text-halo-blur': 0
-        }
-      });
-    }
-    // Re-add click handler after style change
-    companyMiniMap.off('click');
-    companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
-  }
 
 
 
@@ -716,13 +637,12 @@
       mapboxgl.accessToken = cfg.mapboxToken;
       companyMiniMap = new mapboxgl.Map({
         container: 'company-minimap',
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
         center: [lng || -98.5795, lat || 39.8283],
         zoom: lat ? 12 : 4,
       });
       companyMiniMap.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
       companyMiniMap.on('load', () => {
-        applyRoadStyles();
         // Route number labels on roads
         companyMiniMap.addLayer({
           id: 'route-numbers',
@@ -754,13 +674,7 @@
             'text-halo-blur': 0
           }
         });
-        // Add map legend
-        const legend = document.createElement('div');
-        legend.style.cssText = 'position:absolute;bottom:40px;left:10px;background:rgba(8,12,18,0.92);border:1px solid rgba(0,180,220,0.3);padding:8px 12px;font-family:Courier New,monospace;font-size:11px;z-index:10;pointer-events:none;';
-        legend.innerHTML = '<div style="color:#a8b4c0;letter-spacing:0.1em;margin-bottom:6px;">HIGHWAY LEGEND</div>' +
-          '<div style="margin-bottom:4px;"><span style="display:inline-block;width:24px;height:3px;background:#e87c2a;vertical-align:middle;margin-right:8px;"></span><span style="color:#d4e0e8;">Interstate / US Route</span></div>' +
-          '<div><span style="display:inline-block;width:24px;height:3px;background:#00b4dc;vertical-align:middle;margin-right:8px;"></span><span style="color:#d4e0e8;">State Route</span></div>';
-        document.getElementById('company-minimap').appendChild(legend);
+
         companyMiniMap.on('click', (e) => validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng));
       });
     } else {
