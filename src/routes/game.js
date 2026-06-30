@@ -1107,6 +1107,21 @@ router.get('/validate-location', async (req, res) => {
     }
     const mapboxKey = process.env.MAPBOX_API_KEY;
 
+    // Check if the click point is over a body of water (ocean, lake, river, pond, beach)
+    try {
+      const waterUrl = 'https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/' + lngF + ',' + latF + '.json?radius=50&layers=water,waterway&access_token=' + mapboxKey;
+      const waterRes = await fetch(waterUrl);
+      const waterData = await waterRes.json();
+      if (waterData.features && waterData.features.length > 0) {
+        return res.json({
+          valid: false,
+          message: 'This location is over water. Choose a location on dry land for your company HQ.'
+        });
+      }
+    } catch (e) {
+      console.error('Water check error:', e.message);
+    }
+
     // Check against known major US ports/spaceports (OSM tagging unreliable for these)
     for (const port of MAJOR_PORTS) {
       const portDist = haversine(latF, lngF, port.lat, port.lng);
