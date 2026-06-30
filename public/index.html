@@ -737,10 +737,11 @@
       const state = '';
       const res = await fetch(API + '/api/game/validate-location?lat=' + lat + '&lng=' + lng + '&state=' + state);
       const data = await res.json();
-      if (!data.valid) {
+      if (!data.valid || data.error) {
         el.style.background = 'rgba(200,64,64,0.4)';
         el.style.borderColor = '#c84040';
-        document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--danger)">' + data.message + '</span>';
+        const errMsg = data.message || 'This location could not be validated. Please try a different spot.';
+        document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--danger)">' + errMsg + '</span>';
         selectedLocation = null;
         return;
       }

@@ -1025,17 +1025,25 @@ router.get('/validate-location', async (req, res) => {
     const maxRadius = 4828;
     const hwQuery = `[out:json][timeout:15];(way["highway"="motorway"](around:${searchRadius},${latF},${lngF});way["highway"="trunk"](around:${searchRadius},${latF},${lngF});way["highway"="primary"](around:${searchRadius},${latF},${lngF}););out center tags;`;
     const https = require('https');
-    const overpassData = await new Promise((resolve, reject) => {
-      https.get({
-        hostname: 'overpass-api.de',
-        path: '/api/interpreter?data=' + encodeURIComponent(hwQuery),
-        headers: { 'User-Agent': 'FreightEmpire/1.0 (game; contact@merimarkdigital.com)' }
-      }, (r) => {
-        let d = '';
-        r.on('data', c => d += c);
-        r.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
-      }).on('error', reject);
-    });
+    let overpassData = { elements: [] };
+    try {
+      overpassData = await new Promise((resolve, reject) => {
+        https.get({
+          hostname: 'overpass-api.de',
+          path: '/api/interpreter?data=' + encodeURIComponent(hwQuery),
+          headers: { 'User-Agent': 'FreightEmpire/1.0 (game; contact@merimarkdigital.com)' }
+        }, (r) => {
+          let d = '';
+          r.on('data', c => d += c);
+          r.on('end', () => {
+            try { resolve(JSON.parse(d)); }
+            catch(e) { resolve({ elements: [] }); }
+          });
+        }).on('error', () => resolve({ elements: [] }));
+      });
+    } catch (e) {
+      overpassData = { elements: [] };
+    }
     const haversine = (lat1, lng1, lat2, lng2) => {
       const R = 6371000;
       const dLat = (lat2-lat1)*Math.PI/180;
