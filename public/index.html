@@ -460,6 +460,16 @@
   }
   checkEmailVerification();
 
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    const active = document.querySelector('.screen.active');
+    if (!active) return;
+    const id = active.id;
+    if (id === 'loginScreen') { e.preventDefault(); handleLogin(); }
+    else if (id === 'signupScreen') { e.preventDefault(); handleSignup(); }
+    else if (id === 'adminLoginScreen') { e.preventDefault(); handleAdminLogin(); }
+  });
+
   function switchScreen(e, id) {
   if (e) e.preventDefault();
   
