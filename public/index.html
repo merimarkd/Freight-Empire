@@ -605,7 +605,7 @@
         <div><strong style="color:#d4e0e8;">Username:</strong> ${username}</div>
         <div><strong style="color:#d4e0e8;">Company:</strong> ${name}</div>
         <div><strong style="color:#d4e0e8;">Address:</strong> ${selectedLocation.address}</div>
-        <div><strong style="color:#d4e0e8;">Zone:</strong> ${selectedLocation.cityTier.toUpperCase()}</div>
+        <div><strong style="color:#d4e0e8;">Zone:</strong> ${selectedLocation.cityTier ? selectedLocation.cityTier.toUpperCase() : 'UNKNOWN'}</div>
         <div><strong style="color:#d4e0e8;">Lot Size:</strong> ${selectedLocation.lotSizeAcres} acres</div>
         <div><strong style="color:#d4e0e8;">Land Value:</strong> $${selectedLocation.landValue.toLocaleString()}/acre</div>
         <div><strong style="color:#d4e0e8;">Total Cost:</strong> <span style="color:#00b4dc;">$${selectedLocation.totalLandCost.toLocaleString()}</span></div>
@@ -825,9 +825,12 @@
         totalLandCost: data.totalLandCost,
         freightAdvisory: data.freightAdvisory
       };
-      document.getElementById('locationName').innerHTML = data.address + '<br><span style="color:var(--amber);">' + data.cityTier.toUpperCase() + ' ZONE — ' + data.lotSizeAcres + ' acres @ $' + data.landValuePerAcre.toLocaleString() + '/acre = $' + data.totalLandCost.toLocaleString() + ' total</span>';
+      const tierLabel = data.cityTier ? data.cityTier.toUpperCase() : 'UNKNOWN';
+      document.getElementById('locationName').innerHTML = data.address + '<br><span style="color:var(--amber);">' + tierLabel + ' ZONE — ' + data.lotSizeAcres + ' acres @ $' + data.landValuePerAcre.toLocaleString() + '/acre = $' + data.totalLandCost.toLocaleString() + ' total</span>';
       document.getElementById('selectedLocation').classList.add('active');
-      let statusHtml = '<span style="color:var(--teal)">&#10003; ' + data.highwayType + ' ' + data.nearestHighway + ' is ' + data.distanceMiles + ' mi away</span>';
+      let statusHtml = data.nearestHighway && data.distanceMiles
+        ? '<span style="color:var(--teal)">&#10003; ' + data.highwayType + ' ' + data.nearestHighway + ' is ' + data.distanceMiles + ' mi away</span>'
+        : '<span style="color:var(--teal)">&#10003; Location validated</span>';
       if (data.freightAdvisory) {
         statusHtml += '<br><span style="color:#e8c84a;">&#9888; ' + data.freightAdvisory + '</span>';
       }

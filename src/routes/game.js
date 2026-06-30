@@ -1505,7 +1505,10 @@ router.get('/validate-location', async (req, res) => {
     const totalLandCost = Math.round(landValue * lotSizeAcres);
 
     res.json({
-      valid: true, address, nearestHighway: hwName, highwayType: hwLabel, distanceMiles: distMiles,
+      valid: true, address,
+      nearestHighway: overpassAvailable ? hwName : null,
+      highwayType: overpassAvailable ? hwLabel : null,
+      distanceMiles: overpassAvailable ? distMiles : null,
       hqCity, hqState, hqZip, hqCounty, hqNeighborhood,
       cityTier, landValuePerAcre: landValue, landValueSource, distanceFromCenterMiles: distFromCenter.toFixed(1),
       lotSizeAcres, totalLandCost, freightAdvisory, nearestMetroName: nearestMetro ? nearestMetro.name : null
