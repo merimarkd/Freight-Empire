@@ -1081,6 +1081,57 @@ router.get('/validate-location', async (req, res) => {
     }
     const mapboxKey = process.env.MAPBOX_API_KEY;
 
+    // Check for forbidden zones (airports, rail yards, hospitals, parks, monuments, protected land, etc.)
+    try {
+      const forbiddenQuery = '[out:json][timeout:10];(' +
+        'way["aeroway"](around:300,' + latF + ',' + lngF + ');' +
+        'way["railway"~"station|yard"](around:200,' + latF + ',' + lngF + ');' +
+        'way["amenity"~"hospital|police|fire_station"](around:150,' + latF + ',' + lngF + ');' +
+        'way["leisure"~"park|nature_reserve"](around:150,' + latF + ',' + lngF + ');' +
+        'way["boundary"="protected_area"](around:200,' + latF + ',' + lngF + ');' +
+        'way["historic"](around:150,' + latF + ',' + lngF + ');' +
+        'way["landuse"~"military|cemetery"](around:200,' + latF + ',' + lngF + ');' +
+        ');out tags 1;';
+      const forbiddenRes = await new Promise((resolve) => {
+        const req = require('https').request({
+          hostname: 'overpass-api.de',
+          path: '/api/interpreter',
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain', 'Accept': 'application/json', 'User-Agent': 'FreightEmpire/1.0 (game; contact@merimarkdigital.com)' }
+        }, (r) => {
+          let d = '';
+          r.on('data', c => d += c);
+          r.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { resolve(null); } });
+        });
+        req.on('error', () => resolve(null));
+        req.write('data=' + forbiddenQuery);
+        req.end();
+      });
+
+      const hit = forbiddenRes && forbiddenRes.elements && forbiddenRes.elements[0];
+      if (hit) {
+        const tags = hit.tags || {};
+        let reason = 'a restricted area';
+        if (tags.aeroway) reason = 'an airport';
+        else if (tags.railway) reason = 'a rail yard or station';
+        else if (tags.amenity === 'hospital') reason = 'a hospital';
+        else if (tags.amenity === 'police') reason = 'a police station';
+        else if (tags.amenity === 'fire_station') reason = 'a fire station';
+        else if (tags.leisure) reason = 'a park or protected natural area';
+        else if (tags.boundary === 'protected_area') reason = 'protected land';
+        else if (tags.historic) reason = 'a historic site or monument';
+        else if (tags.landuse === 'military') reason = 'military property';
+        else if (tags.landuse === 'cemetery') reason = 'a cemetery';
+
+        return res.json({
+          valid: false,
+          message: 'This location is too close to ' + reason + '. Choose a different site for your company HQ.'
+        });
+      }
+    } catch (e) {
+      console.error('Forbidden zone check error:', e.message);
+    }
+
     // Check building density at the click point - dense clusters indicate residential neighborhoods
     try {
       const densityQuery = '[out:json][timeout:10];way["building"](around:100,' + latF + ',' + lngF + ');out count;';
