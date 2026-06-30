@@ -1081,20 +1081,36 @@ router.get('/validate-location', async (req, res) => {
     }
     const mapboxKey = process.env.MAPBOX_API_KEY;
 
-    // Check if the click point lands in a residential area - block if so
+    // Check building density at the click point - dense clusters indicate residential neighborhoods
     try {
-      const tileQueryUrl = 'https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/' + lngF + ',' + latF + '.json?radius=50&layers=landuse&access_token=' + mapboxKey;
-      const tileRes = await fetch(tileQueryUrl);
-      const tileData = await tileRes.json();
-      const residentialHit = (tileData.features || []).find(f => f.properties && f.properties.class === 'residential');
-      if (residentialHit) {
+      const densityQuery = '[out:json][timeout:10];way["building"](around:100,' + latF + ',' + lngF + ');out count;';
+      const densityRes = await new Promise((resolve) => {
+        const req = require('https').request({
+          hostname: 'overpass-api.de',
+          path: '/api/interpreter',
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain', 'Accept': 'application/json' }
+        }, (r) => {
+          let d = '';
+          r.on('data', c => d += c);
+          r.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { resolve(null); } });
+        });
+        req.on('error', () => resolve(null));
+        req.write('data=' + densityQuery);
+        req.end();
+      });
+
+      const countEl = densityRes && densityRes.elements && densityRes.elements.find(e => e.type === 'count');
+      const buildingCount = countEl ? parseInt(countEl.tags.ways) : 0;
+
+      if (buildingCount >= 8) {
         return res.json({
           valid: false,
-          message: 'This location is in a residential area. Choose an industrial, commercial, or undeveloped site for your company HQ.'
+          message: 'This location appears to be in a residential neighborhood (' + buildingCount + ' nearby buildings detected). Choose an industrial, commercial, or undeveloped site for your company HQ.'
         });
       }
     } catch (e) {
-      console.error('Residential check error:', e.message);
+      console.error('Residential density check error:', e.message);
       // If the check fails, allow placement to continue rather than blocking the player
     }
 
