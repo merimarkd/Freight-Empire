@@ -625,6 +625,25 @@ await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS hq_city VARCHAR
       )
     `);
     console.log('✓ Migration: Created job_applications table');
+
+    // Enable PostGIS for highway proximity queries
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
+    console.log('✓ Migration: PostGIS enabled');
+
+    // Highway table for proximity validation (replaces Overpass API calls)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS us_highways (
+        id SERIAL PRIMARY KEY,
+        osm_id BIGINT,
+        highway_type VARCHAR(20),
+        ref VARCHAR(50),
+        name VARCHAR(255),
+        geom GEOMETRY(LINESTRING, 4326)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS us_highways_geom_idx ON us_highways USING GIST (geom)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS us_highways_type_idx ON us_highways (highway_type)`);
+    console.log('✓ Migration: Created us_highways table with spatial index');
   } catch (error) {
     if (error.message.includes('already exists')) {
       console.log('✓ Tables already exist');
