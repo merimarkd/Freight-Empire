@@ -586,6 +586,45 @@ await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS hq_city VARCHAR
       ON CONFLICT DO NOTHING
     `);
     console.log('✓ Migration: Linked trims to compatible transmissions');
+
+    // ===== RoadRoster Job Posting System =====
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS job_postings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        company_id UUID NOT NULL REFERENCES companies(id),
+        route_type VARCHAR(20) NOT NULL,
+        equipment_type VARCHAR(20) NOT NULL,
+        pay_per_mile DECIMAL(5,3) NOT NULL,
+        home_time VARCHAR(30) NOT NULL,
+        referral_bonus INTEGER DEFAULT 0,
+        cdl_school_partner BOOLEAN DEFAULT FALSE,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT valid_route_type CHECK (route_type IN ('OTR', 'Regional', 'Local', 'Dedicated')),
+        CONSTRAINT valid_equipment_type CHECK (equipment_type IN ('Dry Van', 'Reefer', 'Flatbed', 'Tanker', 'Heavy Haul')),
+        CONSTRAINT valid_status CHECK (status IN ('active', 'paused', 'closed'))
+      )
+    `);
+    console.log('✓ Migration: Created job_postings table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS job_applications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        job_posting_id UUID NOT NULL REFERENCES job_postings(id),
+        candidate_name VARCHAR(100) NOT NULL,
+        years_experience INTEGER NOT NULL,
+        cdl_class VARCHAR(5) DEFAULT 'A',
+        endorsements TEXT,
+        safety_score INTEGER NOT NULL,
+        requested_wage DECIMAL(5,3) NOT NULL,
+        location VARCHAR(100),
+        cdl_school_grad BOOLEAN DEFAULT FALSE,
+        status VARCHAR(20) DEFAULT 'pending',
+        applied_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT valid_application_status CHECK (status IN ('pending', 'accepted', 'declined', 'withdrawn'))
+      )
+    `);
+    console.log('✓ Migration: Created job_applications table');
   } catch (error) {
     if (error.message.includes('already exists')) {
       console.log('✓ Tables already exist');

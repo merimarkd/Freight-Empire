@@ -112,6 +112,33 @@ function generateDriverCandidate() {
   };
 }
 
+function generateJobApplicant(routeType, equipmentType, postedWage) {
+  const yearsExperience = Math.floor(Math.random() * 26);
+  const numEndorsements = Math.floor(Math.random() * 3);
+  const endorsements = [];
+  const pool = [...PORTAL_ENDORSEMENTS];
+  if (equipmentType === 'Tanker' && !endorsements.includes('Tanker')) endorsements.push('Tanker');
+  for (let i = 0; i < numEndorsements && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const pick = pool.splice(idx, 1)[0];
+    if (!endorsements.includes(pick)) endorsements.push(pick);
+  }
+  const safetyScore = Math.max(40, Math.min(100, Math.round(60 + yearsExperience * 1.5 + (Math.random() * 20 - 10))));
+  const requestedWage = Math.round((parseFloat(postedWage) + (Math.random() * 0.04 - 0.02)) * 1000) / 1000;
+  const location = pickRandom(PORTAL_CITIES);
+  const cdlSchoolGrad = yearsExperience <= 1 && Math.random() > 0.5;
+  return {
+    candidateName: pickRandom(PORTAL_FIRST_NAMES) + ' ' + pickRandom(PORTAL_LAST_NAMES),
+    yearsExperience,
+    cdlClass: 'A',
+    endorsements: endorsements.join(', '),
+    safetyScore,
+    requestedWage,
+    location: location.city + ', ' + location.state,
+    cdlSchoolGrad
+  };
+}
+
 router.get('/portal-candidates', async (req, res) => {
   try {
     const count = 10;
@@ -122,6 +149,107 @@ router.get('/portal-candidates', async (req, res) => {
     res.json({ candidates });
   } catch (error) {
     console.error('Portal candidates error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/game/post-job - create a new job posting
+router.post('/post-job', async (req, res) => {
+  try {
+    const { companyId, routeType, equipmentType, payPerMile, homeTime, referralBonus, cdlSchoolPartner } = req.body;
+    if (!companyId || !routeType || !equipmentType || !payPerMile || !homeTime) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const result = await pool.query(
+      `INSERT INTO job_postings (company_id, route_type, equipment_type, pay_per_mile, home_time, referral_bonus, cdl_school_partner)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [companyId, routeType, equipmentType, payPerMile, homeTime, referralBonus || 0, !!cdlSchoolPartner]
+    );
+    res.json({ success: true, posting: result.rows[0] });
+  } catch (error) {
+    console.error('Post job error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/game/job-postings?companyId= - list job postings for a company
+router.get('/job-postings', async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) return res.status(400).json({ error: 'companyId required' });
+    const result = await pool.query(
+      `SELECT p.*, (SELECT COUNT(*) FROM job_applications WHERE job_posting_id = p.id AND status = 'pending') as pending_count
+       FROM job_postings p WHERE p.company_id = $1 ORDER BY p.created_at DESC`,
+      [companyId]
+    );
+    res.json({ postings: result.rows });
+  } catch (error) {
+    console.error('Job postings error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/game/job-posting-status - pause/close/reopen a posting
+router.post('/job-posting-status', async (req, res) => {
+  try {
+    const { postingId, status } = req.body;
+    if (!postingId || !['active', 'paused', 'closed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid postingId or status' });
+    }
+    await pool.query('UPDATE job_postings SET status = $1 WHERE id = $2', [status, postingId]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Job posting status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/game/job-applications?companyId= - applicant inbox for a company
+router.get('/job-applications', async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) return res.status(400).json({ error: 'companyId required' });
+    const result = await pool.query(
+      `SELECT a.*, p.route_type, p.equipment_type, p.pay_per_mile as posted_wage, p.home_time
+       FROM job_applications a
+       JOIN job_postings p ON a.job_posting_id = p.id
+       WHERE p.company_id = $1 AND a.status = 'pending'
+       ORDER BY a.applied_at DESC`,
+      [companyId]
+    );
+    res.json({ applications: result.rows });
+  } catch (error) {
+    console.error('Job applications error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/game/respond-application - accept or decline an applicant
+router.post('/respond-application', async (req, res) => {
+  try {
+    const { applicationId, action, companyId } = req.body;
+    if (!applicationId || !['accept', 'decline'].includes(action)) {
+      return res.status(400).json({ error: 'Invalid applicationId or action' });
+    }
+    const appRes = await pool.query('SELECT * FROM job_applications WHERE id = $1', [applicationId]);
+    if (appRes.rows.length === 0) return res.status(404).json({ error: 'Application not found' });
+    const application = appRes.rows[0];
+
+    if (action === 'decline') {
+      await pool.query("UPDATE job_applications SET status = 'declined' WHERE id = $1", [applicationId]);
+      return res.json({ success: true, message: 'Application declined' });
+    }
+
+    // Accept: create driver record and mark accepted
+    const driverId = uuidv4();
+    await pool.query(
+      `INSERT INTO drivers (id, company_id, name, wage_per_mile) VALUES ($1, $2, $3, $4)`,
+      [driverId, companyId, application.candidate_name, application.requested_wage]
+    );
+    await pool.query("UPDATE job_applications SET status = 'accepted' WHERE id = $1", [applicationId]);
+    res.json({ success: true, driverId, message: application.candidate_name + ' hired' });
+  } catch (error) {
+    console.error('Respond application error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1390,3 +1518,6 @@ function generateZip(state) {
 }
 
 module.exports = router;
+module.exports.generateDriverCandidate = generateDriverCandidate;
+module.exports.generateJobApplicant = generateJobApplicant;
+module.exports.pickRandom = pickRandom;

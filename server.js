@@ -126,6 +126,29 @@ const startTickEngine = async () => {
 startTickEngine();
 console.log('✓ Tick engine started');
 
+// Applicant generation engine - checks active job postings every 90 seconds
+const startApplicantEngine = async () => {
+  setInterval(async () => {
+    try {
+      const postingsResult = await pool.query("SELECT * FROM job_postings WHERE status = 'active'");
+      for (const posting of postingsResult.rows) {
+        // 35% chance per cycle that a posting receives a new applicant
+        if (Math.random() > 0.35) continue;
+        const applicant = gameRoutes.generateJobApplicant(posting.route_type, posting.equipment_type, posting.pay_per_mile);
+        await pool.query(
+          `INSERT INTO job_applications (job_posting_id, candidate_name, years_experience, cdl_class, endorsements, safety_score, requested_wage, location, cdl_school_grad)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [posting.id, applicant.candidateName, applicant.yearsExperience, applicant.cdlClass, applicant.endorsements, applicant.safetyScore, applicant.requestedWage, applicant.location, applicant.cdlSchoolGrad]
+        );
+      }
+    } catch (error) {
+      console.error('Applicant engine error:', error.message);
+    }
+  }, 90000);
+};
+startApplicantEngine();
+console.log('✓ Applicant engine started');
+
     httpServer.listen(PORT, process.env.HOST || 'localhost', () => {
       console.log(`✓ Server running on http://${process.env.HOST || 'localhost'}:${PORT}`);
       console.log(`✓ Socket.io listening on port ${PORT}`);
