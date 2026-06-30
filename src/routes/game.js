@@ -1111,15 +1111,7 @@ router.get('/validate-location', async (req, res) => {
       cityTier = nearestMetro.tier;
       distFromCenter = distToMetro;
       landValue = Math.round(tierBaseValues[cityTier] / (1 + distFromCenter / 3));
-    }
-
-    // Override with real county land value data if available (more accurate than tier formula)
-    const realCountyData = lookupCountyLandValue(hqCounty, hqState);
-    if (realCountyData) {
-      landValue = realCountyData.landPerAcre;
-      landValueSource = 'county_data';
-      // Still apply tier from metro proximity for facility-size gating, but use real $ value
-      if (!nearestMetro || distToMetro > 30) {
+    } else {
       try {
         if (hqCity) {
           const placeUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(hqCity + ', ' + (hqState || '')) + '.json?access_token=' + mapboxKey + '&country=us&types=place&limit=1';
@@ -1147,6 +1139,13 @@ router.get('/validate-location', async (req, res) => {
       } catch (e) {
         console.error('City tier lookup error:', e.message);
       }
+    }
+
+    // Override with real county land value data if available (more accurate than synthetic formula)
+    const realCountyData = lookupCountyLandValue(hqCounty, hqState);
+    if (realCountyData) {
+      landValue = realCountyData.landPerAcre;
+      landValueSource = 'county_data';
     }
 
     let freightAdvisory = null;
