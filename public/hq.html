@@ -926,6 +926,36 @@ function openTabWindow(tabId, tabName) {
     return;
   }
 
+  if (tabId === 'recruiting') {
+    tabWindow.style.width = '1400px';
+    tabWindow.style.height = '900px';
+    tabWindow.style.left = '757px';
+    tabWindow.style.top = '92px';
+    tabWindow.innerHTML = `
+      <div class="window-header">
+        <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">ROADROSTER — DRIVER RECRUITING PORTAL</span>
+        <div class="window-controls">
+          <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+          <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+          <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+        </div>
+      </div>
+      <div style="padding:20px;height:calc(100% - 50px);overflow-y:auto;font-family:'Courier New',monospace;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="color:var(--text-muted);font-size:0.85rem;">Available drivers refresh periodically. Hire wisely — wage rates are set by the candidate.</span>
+          <button class="map-control-btn" onclick="loadPortalCandidates()">&#8635; Refresh Candidates</button>
+        </div>
+        <div id="portalCandidateList" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div style="color:var(--text-muted);">Loading candidates...</div>
+        </div>
+      </div>
+    `;
+    makeDraggable(tabWindow);
+    makeResizable(tabWindow);
+    document.body.appendChild(tabWindow);
+    loadPortalCandidates();
+    return;
+  }
   if (tabId === 'market') {
     tabWindow.style.width = '1848px';
     tabWindow.style.height = '1157px';
@@ -1006,6 +1036,63 @@ function openTabWindow(tabId, tabName) {
   makeResizable(tabWindow);
   document.body.appendChild(tabWindow);
 }
+async function loadPortalCandidates() {
+  const listEl = document.getElementById('portalCandidateList');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="color:var(--text-muted);">Loading candidates...</div>';
+  try {
+    const res = await fetch(API + '/api/game/portal-candidates', {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+    });
+    const data = await res.json();
+    if (!data.candidates || data.candidates.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);">No candidates available right now.</div>';
+      return;
+    }
+    window._portalCandidates = data.candidates;
+    listEl.innerHTML = data.candidates.map(c => `
+      <div style="background:rgba(8,12,18,0.6);border:1px solid var(--border);padding:14px;border-radius:2px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+          <div style="color:var(--teal);font-weight:700;font-size:1rem;">${c.name}</div>
+          <div style="color:${c.safetyScore >= 80 ? '#4ade80' : c.safetyScore >= 60 ? '#e8c84a' : '#c84040'};font-size:0.8rem;">Safety: ${c.safetyScore}</div>
+        </div>
+        <div style="color:var(--text);font-size:0.82rem;line-height:1.7;">
+          <div>CDL Class ${c.cdlClass} &middot; ${c.yearsExperience} yrs experience &middot; ${c.operationType}</div>
+          <div>Endorsements: ${c.endorsements.length ? c.endorsements.join(', ') : 'None'}</div>
+          <div>Based in: ${c.location}</div>
+          <div style="color:var(--amber);margin-top:4px;">Requested: $${c.requestedWage.toFixed(3)}/mile</div>
+        </div>
+        <button onclick="hireCandidate('${c.id}')" style="margin-top:10px;width:100%;padding:8px;">HIRE</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="color:var(--danger);">Error loading candidates.</div>';
+  }
+}
+
+async function hireCandidate(candidateId) {
+  const candidate = (window._portalCandidates || []).find(c => c.id === candidateId);
+  if (!candidate || !companyData) return;
+  try {
+    const res = await fetch(API + '/api/game/hire-driver', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('authToken') },
+      body: JSON.stringify({
+        companyId: companyData.id,
+        driverName: candidate.name,
+        wagePerMile: candidate.requestedWage
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) { showGameWindow('Hiring Failed', data.error || 'Could not hire driver.', 'error'); return; }
+    showGameWindow('Driver Hired', candidate.name + ' has joined your fleet at $' + candidate.requestedWage.toFixed(3) + '/mile.', 'success');
+    window._portalCandidates = (window._portalCandidates || []).filter(c => c.id !== candidateId);
+    loadPortalCandidates();
+  } catch (e) {
+    showGameWindow('Error', 'Network error while hiring driver.', 'error');
+  }
+}
+
 function updateOpsInfo() {
   document.getElementById('opsBalance').textContent = (companyData.cash || 0).toLocaleString();
   document.getElementById('opsDrivers').textContent = '0';

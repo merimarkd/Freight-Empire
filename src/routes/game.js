@@ -72,6 +72,60 @@ router.post('/buy-truck', async (req, res) => {
 });
 
 // Hire a driver
+// GET /api/game/portal-candidates - generate procedural driver candidates for hire
+const PORTAL_FIRST_NAMES = ['James','Michael','Robert','David','Richard','Joseph','Thomas','Charles','Daniel','Matthew','Anthony','Mark','Donald','Steven','Paul','Andrew','Joshua','Kenneth','Kevin','Brian','George','Edward','Ronald','Timothy','Jason','Jeffrey','Ryan','Jacob','Gary','Nicholas','Eric','Jonathan','Stephen','Larry','Justin','Scott','Brandon','Benjamin','Samuel','Gregory','Frank','Raymond','Alexander','Patrick','Jack','Dennis','Jerry','Tyler','Aaron','Henry','Maria','Linda','Patricia','Barbara','Elizabeth','Jennifer','Susan','Jessica','Sarah','Karen','Nancy','Lisa','Margaret','Sandra','Ashley','Kimberly','Donna','Carol','Michelle','Amanda','Melissa'];
+const PORTAL_LAST_NAMES = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Ramirez','Lewis','Robinson','Walker','Young','Allen','King','Wright','Scott','Torres','Nguyen','Hill','Flores','Green','Adams','Nelson','Baker','Hall','Rivera','Campbell','Mitchell','Carter','Roberts'];
+const PORTAL_ENDORSEMENTS = ['Hazmat', 'Tanker', 'Doubles/Triples', 'Passenger', 'School Bus'];
+const PORTAL_CITIES = [
+  {city:'Dallas',state:'TX'},{city:'Atlanta',state:'GA'},{city:'Chicago',state:'IL'},
+  {city:'Memphis',state:'TN'},{city:'Indianapolis',state:'IN'},{city:'Columbus',state:'OH'},
+  {city:'Kansas City',state:'MO'},{city:'Phoenix',state:'AZ'},{city:'Charlotte',state:'NC'},
+  {city:'Denver',state:'CO'},{city:'Louisville',state:'KY'},{city:'Oklahoma City',state:'OK'}
+];
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateDriverCandidate() {
+  const yearsExperience = Math.floor(Math.random() * 26);
+  const numEndorsements = Math.floor(Math.random() * 3);
+  const endorsements = [];
+  const pool = [...PORTAL_ENDORSEMENTS];
+  for (let i = 0; i < numEndorsements && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    endorsements.push(pool.splice(idx, 1)[0]);
+  }
+  const safetyScore = Math.max(40, Math.min(100, Math.round(60 + yearsExperience * 1.5 + (Math.random() * 20 - 10))));
+  const baseWage = 0.42 + (yearsExperience * 0.006) + (endorsements.length * 0.015);
+  const requestedWage = Math.round((baseWage + (Math.random() * 0.06 - 0.03)) * 1000) / 1000;
+  const location = pickRandom(PORTAL_CITIES);
+
+  return {
+    id: uuidv4(),
+    name: pickRandom(PORTAL_FIRST_NAMES) + ' ' + pickRandom(PORTAL_LAST_NAMES),
+    yearsExperience,
+    cdlClass: 'A',
+    endorsements,
+    safetyScore,
+    requestedWage,
+    location: location.city + ', ' + location.state,
+    operationType: Math.random() > 0.5 ? 'OTR' : 'Regional'
+  };
+}
+
+router.get('/portal-candidates', async (req, res) => {
+  try {
+    const count = 10;
+    const candidates = [];
+    for (let i = 0; i < count; i++) {
+      candidates.push(generateDriverCandidate());
+    }
+    res.json({ candidates });
+  } catch (error) {
+    console.error('Portal candidates error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/hire-driver', async (req, res) => {
   const { companyId, driverName, wagePerMile } = req.body;
 
