@@ -997,10 +997,15 @@ router.get('/validate-location', async (req, res) => {
       console.error('City tier lookup error:', e.message);
     }
 
+    const lotSizes = { rural: 2, small: 3, medium: 4, large: 5, metro: 6 };
+    const lotSizeAcres = lotSizes[cityTier] || 2;
+    const totalLandCost = Math.round(landValue * lotSizeAcres);
+
     res.json({
       valid: true, address, nearestHighway: hwName, highwayType: hwLabel, distanceMiles: distMiles,
       hqCity, hqState, hqZip, hqCounty, hqNeighborhood,
-      cityTier, landValuePerAcre: landValue, distanceFromCenterMiles: distFromCenter.toFixed(1)
+      cityTier, landValuePerAcre: landValue, distanceFromCenterMiles: distFromCenter.toFixed(1),
+      lotSizeAcres, totalLandCost
     });
   } catch (error) {
     console.error('Validate location error:', error.message);
