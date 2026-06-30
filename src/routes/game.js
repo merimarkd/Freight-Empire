@@ -4,6 +4,28 @@ const { pool } = require('../db/connection');
 
 const router = express.Router();
 
+// Load real county land value data (derived from Zillow ZHVI)
+let COUNTY_LAND_VALUES = {};
+try {
+  const fs = require('fs');
+  const path = require('path');
+  const dataPath = path.join(__dirname, '../../data/land_values.json');
+  COUNTY_LAND_VALUES = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  console.log('✓ Loaded ' + Object.keys(COUNTY_LAND_VALUES).length + ' county land values');
+} catch (e) {
+  console.error('Could not load land_values.json:', e.message);
+}
+
+function lookupCountyLandValue(county, state) {
+  if (!county || !state) return null;
+  let normalizedCounty = county.trim().toUpperCase();
+  if (!normalizedCounty.includes('COUNTY') && !normalizedCounty.includes('PARISH') && !normalizedCounty.includes('BOROUGH')) {
+    normalizedCounty += ' COUNTY';
+  }
+  const key = normalizedCounty + '|' + state.trim().toUpperCase();
+  return COUNTY_LAND_VALUES[key] || null;
+}
+
 // Buy a truck
 router.post('/buy-truck', async (req, res) => {
   const { companyId, vehicleType, purchasePrice } = req.body;
@@ -1080,6 +1102,7 @@ router.get('/validate-location', async (req, res) => {
     let cityTier = 'rural';
     let landValue = 3000;
     let distFromCenter = 0;
+    let landValueSource = 'synthetic';
     const tierBaseValues = { metro: 200000, large: 120000, medium: 60000, small: 15000, rural: 3000 };
 
     const { metro: nearestMetro, distanceMiles: distToMetro } = findNearestMetro(latF, lngF);
@@ -1088,7 +1111,15 @@ router.get('/validate-location', async (req, res) => {
       cityTier = nearestMetro.tier;
       distFromCenter = distToMetro;
       landValue = Math.round(tierBaseValues[cityTier] / (1 + distFromCenter / 3));
-    } else {
+    }
+
+    // Override with real county land value data if available (more accurate than tier formula)
+    const realCountyData = lookupCountyLandValue(hqCounty, hqState);
+    if (realCountyData) {
+      landValue = realCountyData.landPerAcre;
+      landValueSource = 'county_data';
+      // Still apply tier from metro proximity for facility-size gating, but use real $ value
+      if (!nearestMetro || distToMetro > 30) {
       try {
         if (hqCity) {
           const placeUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(hqCity + ', ' + (hqState || '')) + '.json?access_token=' + mapboxKey + '&country=us&types=place&limit=1';
@@ -1132,7 +1163,7 @@ router.get('/validate-location', async (req, res) => {
     res.json({
       valid: true, address, nearestHighway: hwName, highwayType: hwLabel, distanceMiles: distMiles,
       hqCity, hqState, hqZip, hqCounty, hqNeighborhood,
-      cityTier, landValuePerAcre: landValue, distanceFromCenterMiles: distFromCenter.toFixed(1),
+      cityTier, landValuePerAcre: landValue, landValueSource, distanceFromCenterMiles: distFromCenter.toFixed(1),
       lotSizeAcres, totalLandCost, freightAdvisory, nearestMetroName: nearestMetro ? nearestMetro.name : null
     });
   } catch (error) {
