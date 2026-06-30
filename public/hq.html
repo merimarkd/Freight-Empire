@@ -926,7 +926,44 @@ function openTabWindow(tabId, tabName) {
     return;
   }
 
-  if (tabId === 'recruiting' || tabId === 'portal') {
+  if (tabId === 'portal') {
+    tabWindow.style.width = '1600px';
+    tabWindow.style.height = '1000px';
+    tabWindow.style.left = '757px';
+    tabWindow.style.top = '92px';
+    tabWindow.innerHTML = `
+      <div class="window-header">
+        <span style="color:var(--teal);font-size:0.92rem;letter-spacing:0.08em;">PORTAL</span>
+        <div class="window-controls">
+          <button class="win-btn" onclick="showWindowMenu(event, this.closest('.game-window'))">&#8942;</button>
+          <button class="win-btn win-btn-minimize" onclick="toggleMinimize(this.closest('.game-window'))">&#8211;</button>
+          <button class="win-btn win-btn-close" onclick="this.closest('.game-window').remove()">X</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;height:calc(100% - 50px);background:#0a0c0f;">
+        <div id="portalTabStrip" style="display:flex;align-items:flex-end;background:rgba(8,12,18,0.97);border-bottom:1px solid var(--border);padding:6px 8px 0 8px;gap:4px;min-height:34px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(8,12,18,0.9);border-bottom:1px solid var(--border);">
+          <button class="loc-icon-btn" onclick="portalGoBack()" title="Back">&#8592;</button>
+          <button class="loc-icon-btn" onclick="portalGoForward()" title="Forward">&#8594;</button>
+          <button class="loc-icon-btn" onclick="portalGoHome()" title="Home">&#8962;</button>
+          <div style="flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:2px;padding:6px 12px;color:var(--text-hi);font-family:'Courier New',monospace;font-size:0.82rem;" id="portalAddressBar">portal://home</div>
+        </div>
+        <div id="portalBookmarkBar" style="display:flex;gap:4px;padding:6px 12px;background:rgba(8,12,18,0.85);border-bottom:1px solid var(--border);font-size:0.78rem;">
+          <button class="map-control-btn" onclick="portalNavigate('home')">&#8962; Home</button>
+          <button class="map-control-btn" onclick="portalNavigate('roadroster')">RoadRoster</button>
+          <button class="map-control-btn" onclick="portalNavigate('dealerships')">Truck Dealers</button>
+          <button class="map-control-btn" onclick="portalNavigate('parts')">Parts &amp; Equipment</button>
+        </div>
+        <div id="portalContent" style="flex:1;overflow-y:auto;padding:30px;font-family:'Courier New',monospace;"></div>
+      </div>
+    `;
+    makeDraggable(tabWindow);
+    makeResizable(tabWindow);
+    document.body.appendChild(tabWindow);
+    initPortalBrowser();
+    return;
+  }
+  if (tabId === 'recruiting') {
     tabWindow.style.width = '1400px';
     tabWindow.style.height = '900px';
     tabWindow.style.left = '757px';
@@ -1091,6 +1128,177 @@ async function hireCandidate(candidateId) {
   } catch (e) {
     showGameWindow('Error', 'Network error while hiring driver.', 'error');
   }
+}
+
+// ===== Portal Browser Engine =====
+let portalState = {
+  tabs: [],
+  activeTabId: null
+};
+
+const PORTAL_PAGES = {
+  home: { title: 'Portal Home', url: 'portal://home' },
+  roadroster: { title: 'RoadRoster', url: 'roadroster.com' },
+  dealerships: { title: 'Truck Dealer Finder', url: 'dealerfinder.com' },
+  parts: { title: 'Parts & Equipment Exchange', url: 'partsxchange.com' }
+};
+
+function initPortalBrowser() {
+  portalState = { tabs: [], activeTabId: null };
+  portalOpenNewTab('home');
+}
+
+function portalOpenNewTab(pageKey) {
+  const tabId = 'ptab-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+  const page = PORTAL_PAGES[pageKey] || PORTAL_PAGES.home;
+  portalState.tabs.push({ id: tabId, pageKey, title: page.title, history: [pageKey], historyIndex: 0 });
+  portalState.activeTabId = tabId;
+  renderPortalTabStrip();
+  renderPortalActiveTab();
+}
+
+function portalCloseTab(tabId, e) {
+  if (e) e.stopPropagation();
+  const idx = portalState.tabs.findIndex(t => t.id === tabId);
+  if (idx === -1) return;
+  portalState.tabs.splice(idx, 1);
+  if (portalState.tabs.length === 0) {
+    portalOpenNewTab('home');
+    return;
+  }
+  if (portalState.activeTabId === tabId) {
+    const newIdx = Math.max(0, idx - 1);
+    portalState.activeTabId = portalState.tabs[newIdx].id;
+  }
+  renderPortalTabStrip();
+  renderPortalActiveTab();
+}
+
+function portalSwitchTab(tabId) {
+  portalState.activeTabId = tabId;
+  renderPortalTabStrip();
+  renderPortalActiveTab();
+}
+
+function getActivePortalTab() {
+  return portalState.tabs.find(t => t.id === portalState.activeTabId);
+}
+
+function portalNavigate(pageKey) {
+  const tab = getActivePortalTab();
+  if (!tab) return;
+  if (tab.historyIndex < tab.history.length - 1) {
+    tab.history = tab.history.slice(0, tab.historyIndex + 1);
+  }
+  tab.history.push(pageKey);
+  tab.historyIndex = tab.history.length - 1;
+  tab.pageKey = pageKey;
+  tab.title = (PORTAL_PAGES[pageKey] || PORTAL_PAGES.home).title;
+  renderPortalTabStrip();
+  renderPortalActiveTab();
+}
+
+function portalGoBack() {
+  const tab = getActivePortalTab();
+  if (!tab || tab.historyIndex <= 0) return;
+  tab.historyIndex--;
+  tab.pageKey = tab.history[tab.historyIndex];
+  tab.title = (PORTAL_PAGES[tab.pageKey] || PORTAL_PAGES.home).title;
+  renderPortalTabStrip();
+  renderPortalActiveTab();
+}
+
+function portalGoForward() {
+  const tab = getActivePortalTab();
+  if (!tab || tab.historyIndex >= tab.history.length - 1) return;
+  tab.historyIndex++;
+  tab.pageKey = tab.history[tab.historyIndex];
+  tab.title = (PORTAL_PAGES[tab.pageKey] || PORTAL_PAGES.home).title;
+  renderPortalTabStrip();
+  renderPortalActiveTab();
+}
+
+function portalGoHome() {
+  portalNavigate('home');
+}
+
+function renderPortalTabStrip() {
+  const strip = document.getElementById('portalTabStrip');
+  if (!strip) return;
+  strip.innerHTML = portalState.tabs.map(t => `
+    <div onclick="portalSwitchTab('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:${t.id === portalState.activeTabId ? 'rgba(0,180,220,0.1)' : 'rgba(4,8,14,0.6)'};border:1px solid var(--border);border-bottom:${t.id === portalState.activeTabId ? 'none' : '1px solid var(--border)'};border-radius:3px 3px 0 0;cursor:pointer;max-width:180px;font-size:0.78rem;color:${t.id === portalState.activeTabId ? 'var(--teal)' : 'var(--text-muted)'};">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.title}</span>
+      <span onclick="portalCloseTab('${t.id}', event)" style="opacity:0.6;">&times;</span>
+    </div>
+  `).join('') + `<div onclick="portalOpenNewTab('home')" style="padding:7px 12px;cursor:pointer;color:var(--text-muted);font-size:0.9rem;">+</div>`;
+}
+
+function renderPortalActiveTab() {
+  const tab = getActivePortalTab();
+  const contentEl = document.getElementById('portalContent');
+  const addressBar = document.getElementById('portalAddressBar');
+  if (!tab || !contentEl) return;
+  const page = PORTAL_PAGES[tab.pageKey] || PORTAL_PAGES.home;
+  if (addressBar) addressBar.textContent = page.url;
+  contentEl.innerHTML = renderPortalPage(tab.pageKey);
+  if (tab.pageKey === 'roadroster') loadPortalCandidates();
+}
+
+function renderPortalPage(pageKey) {
+  if (pageKey === 'home') {
+    return `
+      <div style="text-align:center;margin-bottom:36px;">
+        <div style="color:var(--teal);font-size:1.6rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Freight Empire Portal</div>
+        <div style="color:var(--text-muted);font-size:0.85rem;">Find drivers, equipment, and services for your operation</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto;">
+        <div onclick="portalNavigate('roadroster')" style="cursor:pointer;background:rgba(8,12,18,0.6);border:1px solid var(--border);padding:24px;text-align:center;border-radius:2px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:2rem;margin-bottom:10px;">&#128100;</div>
+          <div style="color:var(--teal);font-weight:700;margin-bottom:6px;">RoadRoster</div>
+          <div style="color:var(--text-muted);font-size:0.78rem;">Driver recruiting agency</div>
+        </div>
+        <div onclick="portalNavigate('dealerships')" style="cursor:pointer;background:rgba(8,12,18,0.6);border:1px solid var(--border);padding:24px;text-align:center;border-radius:2px;" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:2rem;margin-bottom:10px;">&#128666;</div>
+          <div style="color:var(--teal);font-weight:700;margin-bottom:6px;">Truck Dealer Finder</div>
+          <div style="color:var(--text-muted);font-size:0.78rem;">New &amp; used Class 8 dealerships</div>
+        </div>
+        <div onclick="portalNavigate('parts')" style="cursor:pointer;background:rgba(8,12,18,0.6);border:1px solid var(--border);padding:24px;text-align:center;border-radius:2px;" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:2rem;margin-bottom:10px;">&#128295;</div>
+          <div style="color:var(--teal);font-weight:700;margin-bottom:6px;">Parts &amp; Equipment Exchange</div>
+          <div style="color:var(--text-muted);font-size:0.78rem;">Order parts and shop equipment</div>
+        </div>
+      </div>
+    `;
+  }
+  if (pageKey === 'roadroster') {
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="color:var(--teal);font-size:1.1rem;font-weight:700;">ROADROSTER — DRIVER RECRUITING</div>
+        <button class="map-control-btn" onclick="loadPortalCandidates()">&#8635; Refresh Candidates</button>
+      </div>
+      <div style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;">Available drivers refresh periodically. Hire wisely — wage rates are set by the candidate.</div>
+      <div id="portalCandidateList" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="color:var(--text-muted);">Loading candidates...</div>
+      </div>
+    `;
+  }
+  if (pageKey === 'dealerships') {
+    return `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="color:var(--teal);font-size:1.2rem;margin-bottom:10px;">Truck Dealer Finder</div>
+        <div style="color:var(--text-muted);font-size:0.88rem;">Dealership listings are coming soon. Check back for new and used Class 8 truck inventory near you.</div>
+      </div>
+    `;
+  }
+  if (pageKey === 'parts') {
+    return `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="color:var(--teal);font-size:1.2rem;margin-bottom:10px;">Parts &amp; Equipment Exchange</div>
+        <div style="color:var(--text-muted);font-size:0.88rem;">Parts ordering is coming soon. In the meantime, visit the Continental Freight Exchange for available equipment.</div>
+      </div>
+    `;
+  }
+  return '<div style="color:var(--text-muted);">Page not found.</div>';
 }
 
 function updateOpsInfo() {
