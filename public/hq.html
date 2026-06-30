@@ -262,6 +262,11 @@
     .loc-detail-row { display: flex; gap: 0; color: var(--text-muted); font-size: 1rem; line-height: 1.8; }
     .loc-detail-label { color: var(--teal); min-width: 90px; font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
     .loc-detail-value { color: var(--text-hi); letter-spacing: 0.04em; }
+.rr-subtab { background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: 'Courier New', monospace; font-size: 0.85rem; padding: 8px 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; width: auto; }
+.rr-subtab:hover { color: var(--teal); }
+.rr-subtab.active { color: var(--teal); border-bottom-color: var(--teal); }
+.rr-job-card { background: rgba(8,12,18,0.6); border: 1px solid var(--border); padding: 14px; border-radius: 2px; margin-bottom: 10px; }
+.rr-applicant-card { background: rgba(8,12,18,0.6); border: 1px solid var(--border); padding: 14px; border-radius: 2px; }
 </style>
 <script src="/socket.io/socket.io.js"></script>
   <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
@@ -1241,7 +1246,198 @@ function renderPortalActiveTab() {
   const page = PORTAL_PAGES[tab.pageKey] || PORTAL_PAGES.home;
   if (addressBar) addressBar.textContent = page.url;
   contentEl.innerHTML = renderPortalPage(tab.pageKey);
-  if (tab.pageKey === 'roadroster') loadPortalCandidates();
+  if (tab.pageKey === 'roadroster') rrSwitchSubTab('quick');
+}
+
+// ===== RoadRoster Sub-Tab Engine =====
+function rrSwitchSubTab(which) {
+  ['Quick', 'Post', 'Inbox'].forEach(name => {
+    const btn = document.getElementById('rrSubTab' + name);
+    if (btn) btn.classList.toggle('active', name.toLowerCase() === which);
+  });
+  const contentEl = document.getElementById('rrSubTabContent');
+  if (!contentEl) return;
+  if (which === 'quick') {
+    contentEl.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="map-control-btn" onclick="loadPortalCandidates()">&#8635; Refresh Candidates</button>
+      </div>
+      <div style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;">Browse available drivers for instant hire. Wage rates are set by the candidate.</div>
+      <div id="portalCandidateList" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="color:var(--text-muted);">Loading candidates...</div>
+      </div>
+    `;
+    loadPortalCandidates();
+  } else if (which === 'post') {
+    contentEl.innerHTML = `
+      <div style="max-width:520px;">
+        <div style="color:var(--text-muted);font-size:0.82rem;margin-bottom:18px;">Post a job listing and applicants will apply over time. Review and accept candidates from the Applicant Inbox.</div>
+        <label style="display:block;color:var(--text);font-size:0.85rem;margin-bottom:4px;">Route Type</label>
+        <select id="rrRouteType" style="width:100%;margin-bottom:12px;">
+          <option value="OTR">OTR</option>
+          <option value="Regional">Regional</option>
+          <option value="Local">Local</option>
+          <option value="Dedicated">Dedicated</option>
+        </select>
+        <label style="display:block;color:var(--text);font-size:0.85rem;margin-bottom:4px;">Equipment Type</label>
+        <select id="rrEquipmentType" style="width:100%;margin-bottom:12px;">
+          <option value="Dry Van">Dry Van</option>
+          <option value="Reefer">Reefer</option>
+          <option value="Flatbed">Flatbed</option>
+          <option value="Tanker">Tanker</option>
+          <option value="Heavy Haul">Heavy Haul</option>
+        </select>
+        <label style="display:block;color:var(--text);font-size:0.85rem;margin-bottom:4px;">Pay Per Mile ($)</label>
+        <input type="number" step="0.01" min="0.30" max="1.00" id="rrPayPerMile" value="0.55" style="width:100%;margin-bottom:12px;">
+        <label style="display:block;color:var(--text);font-size:0.85rem;margin-bottom:4px;">Home Time</label>
+        <select id="rrHomeTime" style="width:100%;margin-bottom:12px;">
+          <option value="Daily">Daily</option>
+          <option value="Weekly">Weekly</option>
+          <option value="Bi-Weekly">Bi-Weekly</option>
+          <option value="Every 2-3 Weeks">Every 2-3 Weeks</option>
+        </select>
+        <label style="display:block;color:var(--text);font-size:0.85rem;margin-bottom:4px;">Referral Bonus ($, optional)</label>
+        <input type="number" step="50" min="0" id="rrReferralBonus" value="0" style="width:100%;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:0.85rem;margin-bottom:18px;">
+          <input type="checkbox" id="rrCdlSchoolPartner" style="width:auto;margin:0;">
+          CDL School Partnership (attracts recent grads)
+        </label>
+        <button onclick="rrSubmitJobPosting()">Post Job</button>
+      </div>
+      <div style="margin-top:28px;">
+        <div style="color:var(--teal);font-size:0.95rem;font-weight:700;margin-bottom:10px;">YOUR ACTIVE POSTINGS</div>
+        <div id="rrPostingsList"><div style="color:var(--text-muted);">Loading postings...</div></div>
+      </div>
+    `;
+    rrLoadPostings();
+  } else if (which === 'inbox') {
+    contentEl.innerHTML = `
+      <div style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;">Review applicants who have applied to your active job postings.</div>
+      <div id="rrApplicantList"><div style="color:var(--text-muted);">Loading applicants...</div></div>
+    `;
+    rrLoadApplicants();
+  }
+}
+
+async function rrSubmitJobPosting() {
+  if (!companyData) return;
+  const routeType = document.getElementById('rrRouteType').value;
+  const equipmentType = document.getElementById('rrEquipmentType').value;
+  const payPerMile = parseFloat(document.getElementById('rrPayPerMile').value);
+  const homeTime = document.getElementById('rrHomeTime').value;
+  const referralBonus = parseInt(document.getElementById('rrReferralBonus').value) || 0;
+  const cdlSchoolPartner = document.getElementById('rrCdlSchoolPartner').checked;
+  if (!payPerMile || payPerMile <= 0) { showGameWindow('Invalid Input', 'Enter a valid pay per mile.', 'error'); return; }
+  try {
+    const res = await fetch(API + '/api/game/post-job', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('authToken') },
+      body: JSON.stringify({ companyId: companyData.id, routeType, equipmentType, payPerMile, homeTime, referralBonus, cdlSchoolPartner })
+    });
+    const data = await res.json();
+    if (!res.ok) { showGameWindow('Error', data.error || 'Could not post job.', 'error'); return; }
+    showGameWindow('Job Posted', 'Your ' + routeType + ' ' + equipmentType + ' position is now live. Applicants will begin applying soon.', 'success');
+    rrLoadPostings();
+  } catch (e) {
+    showGameWindow('Error', 'Network error while posting job.', 'error');
+  }
+}
+
+async function rrLoadPostings() {
+  const listEl = document.getElementById('rrPostingsList');
+  if (!listEl || !companyData) return;
+  try {
+    const res = await fetch(API + '/api/game/job-postings?companyId=' + companyData.id, {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+    });
+    const data = await res.json();
+    if (!data.postings || data.postings.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);">No active postings.</div>';
+      return;
+    }
+    listEl.innerHTML = data.postings.map(p => `
+      <div class="rr-job-card">
+        <div style="display:flex;justify-content:space-between;">
+          <div style="color:var(--teal);font-weight:700;">${p.route_type} — ${p.equipment_type}</div>
+          <div style="color:${p.status === 'active' ? '#4ade80' : 'var(--text-muted)'};font-size:0.78rem;text-transform:uppercase;">${p.status}</div>
+        </div>
+        <div style="color:var(--text);font-size:0.82rem;margin-top:4px;">$${parseFloat(p.pay_per_mile).toFixed(3)}/mile &middot; ${p.home_time} home time</div>
+        <div style="color:var(--amber);font-size:0.8rem;margin-top:4px;">${p.pending_count} pending applicant${p.pending_count == 1 ? '' : 's'}</div>
+        ${p.status === 'active' ? `<button onclick="rrTogglePosting('${p.id}','paused')" style="margin-top:8px;width:auto;padding:6px 14px;font-size:0.72rem;">Pause</button>` : ''}
+        ${p.status === 'paused' ? `<button onclick="rrTogglePosting('${p.id}','active')" style="margin-top:8px;width:auto;padding:6px 14px;font-size:0.72rem;">Resume</button>` : ''}
+        ${p.status !== 'closed' ? `<button onclick="rrTogglePosting('${p.id}','closed')" style="margin-top:8px;margin-left:8px;width:auto;padding:6px 14px;font-size:0.72rem;background:#1a2028;color:var(--text-muted);">Close</button>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="color:var(--danger);">Error loading postings.</div>';
+  }
+}
+
+async function rrTogglePosting(postingId, status) {
+  try {
+    await fetch(API + '/api/game/job-posting-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('authToken') },
+      body: JSON.stringify({ postingId, status })
+    });
+    rrLoadPostings();
+  } catch (e) {}
+}
+
+async function rrLoadApplicants() {
+  const listEl = document.getElementById('rrApplicantList');
+  if (!listEl || !companyData) return;
+  try {
+    const res = await fetch(API + '/api/game/job-applications?companyId=' + companyData.id, {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+    });
+    const data = await res.json();
+    const badge = document.getElementById('rrInboxBadge');
+    if (!data.applications || data.applications.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);">No pending applicants. Post a job to start receiving applications.</div>';
+      if (badge) badge.textContent = '';
+      return;
+    }
+    if (badge) badge.textContent = '(' + data.applications.length + ')';
+    listEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' + data.applications.map(a => `
+      <div class="rr-applicant-card">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+          <div style="color:var(--teal);font-weight:700;">${a.candidate_name}</div>
+          <div style="color:${a.safety_score >= 80 ? '#4ade80' : a.safety_score >= 60 ? '#e8c84a' : '#c84040'};font-size:0.8rem;">Safety: ${a.safety_score}</div>
+        </div>
+        <div style="color:var(--text);font-size:0.82rem;line-height:1.7;">
+          <div>Applying for: ${a.route_type} — ${a.equipment_type}</div>
+          <div>CDL Class ${a.cdl_class} &middot; ${a.years_experience} yrs experience ${a.cdl_school_grad ? '&middot; CDL School Grad' : ''}</div>
+          <div>Endorsements: ${a.endorsements || 'None'}</div>
+          <div>Based in: ${a.location}</div>
+          <div style="color:var(--amber);margin-top:4px;">Requested: $${parseFloat(a.requested_wage).toFixed(3)}/mile <span style="color:var(--text-muted);">(posted: $${parseFloat(a.posted_wage).toFixed(3)})</span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="rrRespondApplication('${a.id}','accept')" style="flex:1;">Accept</button>
+          <button onclick="rrRespondApplication('${a.id}','decline')" style="flex:1;background:#1a2028;color:var(--text-muted);">Decline</button>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  } catch (e) {
+    listEl.innerHTML = '<div style="color:var(--danger);">Error loading applicants.</div>';
+  }
+}
+
+async function rrRespondApplication(applicationId, action) {
+  if (!companyData) return;
+  try {
+    const res = await fetch(API + '/api/game/respond-application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('authToken') },
+      body: JSON.stringify({ applicationId, action, companyId: companyData.id })
+    });
+    const data = await res.json();
+    if (!res.ok) { showGameWindow('Error', data.error || 'Could not process application.', 'error'); return; }
+    if (action === 'accept') showGameWindow('Driver Hired', data.message, 'success');
+    rrLoadApplicants();
+  } catch (e) {
+    showGameWindow('Error', 'Network error.', 'error');
+  }
 }
 
 function renderPortalPage(pageKey) {
@@ -1272,14 +1468,13 @@ function renderPortalPage(pageKey) {
   }
   if (pageKey === 'roadroster') {
     return `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="color:var(--teal);font-size:1.1rem;font-weight:700;">ROADROSTER — DRIVER RECRUITING</div>
-        <button class="map-control-btn" onclick="loadPortalCandidates()">&#8635; Refresh Candidates</button>
+      <div style="color:var(--teal);font-size:1.1rem;font-weight:700;margin-bottom:14px;">ROADROSTER — DRIVER RECRUITING</div>
+      <div style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:18px;">
+        <button id="rrSubTabQuick" onclick="rrSwitchSubTab('quick')" class="rr-subtab active">Quick Hire</button>
+        <button id="rrSubTabPost" onclick="rrSwitchSubTab('post')" class="rr-subtab">Post a Job</button>
+        <button id="rrSubTabInbox" onclick="rrSwitchSubTab('inbox')" class="rr-subtab">Applicant Inbox <span id="rrInboxBadge"></span></button>
       </div>
-      <div style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;">Available drivers refresh periodically. Hire wisely — wage rates are set by the candidate.</div>
-      <div id="portalCandidateList" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div style="color:var(--text-muted);">Loading candidates...</div>
-      </div>
+      <div id="rrSubTabContent"></div>
     `;
   }
   if (pageKey === 'dealerships') {
