@@ -726,6 +726,15 @@
     }
   }
 
+  function handleMapClick(e) {
+    const features = companyMiniMap.queryRenderedFeatures(e.point, { layers: ['locked-countries-fill'] });
+    if (features && features.length > 0) {
+      document.getElementById('zoneStatus').innerHTML = '<span style="color:var(--danger)">This region is not yet available. Currently only the United States is playable.</span>';
+      return;
+    }
+    validateAndPlaceMarker(e.lngLat.lat, e.lngLat.lng);
+  }
+
   async function validateAndPlaceMarker(lat, lng) {
     document.getElementById('zoneStatus').innerHTML = '<span class="loading-blink">Validating location...</span>';
     document.getElementById('createBtn').disabled = true;
