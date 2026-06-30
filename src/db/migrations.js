@@ -323,6 +323,194 @@ await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS hq_city VARCHAR
     `);
     console.log('✓ Migration: Created admins table');
 
+    // ===== Truck Equipment System =====
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS truck_manufacturers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL,
+        country VARCHAR(50),
+        founded_year INTEGER
+      )
+    `);
+    console.log('✓ Migration: Created truck_manufacturers table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS truck_models (
+        id SERIAL PRIMARY KEY,
+        manufacturer_id INTEGER REFERENCES truck_manufacturers(id),
+        name VARCHAR(100) NOT NULL,
+        body_style VARCHAR(50),
+        year_start INTEGER,
+        year_end INTEGER,
+        UNIQUE(manufacturer_id, name)
+      )
+    `);
+    console.log('✓ Migration: Created truck_models table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS truck_trims (
+        id SERIAL PRIMARY KEY,
+        model_id INTEGER REFERENCES truck_models(id),
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        base_price INTEGER,
+        UNIQUE(model_id, name)
+      )
+    `);
+    console.log('✓ Migration: Created truck_trims table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS engine_options (
+        id SERIAL PRIMARY KEY,
+        manufacturer_name VARCHAR(100) NOT NULL,
+        model_name VARCHAR(100) NOT NULL,
+        displacement_liters DECIMAL(4,1),
+        horsepower_range VARCHAR(50),
+        torque_range VARCHAR(50),
+        UNIQUE(manufacturer_name, model_name)
+      )
+    `);
+    console.log('✓ Migration: Created engine_options table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transmission_options (
+        id SERIAL PRIMARY KEY,
+        manufacturer_name VARCHAR(100) NOT NULL,
+        model_name VARCHAR(100) NOT NULL,
+        speeds INTEGER,
+        type VARCHAR(50),
+        UNIQUE(manufacturer_name, model_name)
+      )
+    `);
+    console.log('✓ Migration: Created transmission_options table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS truck_trim_engines (
+        trim_id INTEGER REFERENCES truck_trims(id),
+        engine_id INTEGER REFERENCES engine_options(id),
+        PRIMARY KEY (trim_id, engine_id)
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS truck_trim_transmissions (
+        trim_id INTEGER REFERENCES truck_trims(id),
+        transmission_id INTEGER REFERENCES transmission_options(id),
+        PRIMARY KEY (trim_id, transmission_id)
+      )
+    `);
+    console.log('✓ Migration: Created truck trim-engine/transmission link tables');
+
+    // Seed manufacturers (fictional names mirroring real-world counterparts)
+    await pool.query(`
+      INSERT INTO truck_manufacturers (name, country, founded_year) VALUES
+      ('Kentworth', 'USA', 1923),
+      ('Peterbuilt', 'USA', 1939),
+      ('Freightlite', 'USA', 1942),
+      ('Volvar Trucks', 'Sweden', 1928),
+      ('Mackson', 'USA', 1900),
+      ('Continental Trucks', 'USA', 1907),
+      ('Western Eagle', 'USA', 1967)
+      ON CONFLICT (name) DO NOTHING
+    `);
+    console.log('✓ Migration: Seeded truck manufacturers');
+
+    // Seed engine options (fictional names mirroring real engine families)
+    await pool.query(`
+      INSERT INTO engine_options (manufacturer_name, model_name, displacement_liters, horsepower_range, torque_range) VALUES
+      ('Cummings', 'X15', 15.0, '400-605 hp', '1450-2050 lb-ft'),
+      ('Cummings', 'X12', 11.8, '350-500 hp', '1250-1700 lb-ft'),
+      ('Motown Diesel', 'DD13', 12.8, '375-505 hp', '1450-1850 lb-ft'),
+      ('Motown Diesel', 'DD15', 14.8, '400-505 hp', '1450-1850 lb-ft'),
+      ('Motown Diesel', 'DD16', 15.6, '500-600 hp', '1850-2050 lb-ft'),
+      ('PACCO MX', 'MX-11', 10.8, '355-430 hp', '1250-1650 lb-ft'),
+      ('PACCO MX', 'MX-13', 12.9, '405-510 hp', '1450-1850 lb-ft'),
+      ('Volvar', 'D11', 10.8, '350-425 hp', '1250-1550 lb-ft'),
+      ('Volvar', 'D13', 12.8, '375-500 hp', '1450-1850 lb-ft'),
+      ('Mackson', 'MP7', 10.8, '325-405 hp', '1200-1560 lb-ft'),
+      ('Mackson', 'MP8', 12.8, '405-505 hp', '1460-1860 lb-ft')
+      ON CONFLICT (manufacturer_name, model_name) DO NOTHING
+    `);
+    console.log('✓ Migration: Seeded engine options');
+
+    // Seed transmission options (fictional names mirroring real transmission families)
+    await pool.query(`
+      INSERT INTO transmission_options (manufacturer_name, model_name, speeds, type) VALUES
+      ('Eatonn Fuller', 'Roadranger 10-Speed', 10, 'Manual'),
+      ('Eatonn Fuller', 'Roadranger 13-Speed', 13, 'Manual'),
+      ('Eatonn Fuller', 'Roadranger 18-Speed', 18, 'Manual'),
+      ('Eatonn Fuller', 'Advantage 10-Speed', 10, 'Automated Manual'),
+      ('Allisson', '4000 Series', 6, 'Automatic'),
+      ('PACCO', 'PACCO AMT', 12, 'Automated Manual'),
+      ('Mackson', 'mDrive HD', 14, 'Automated Manual'),
+      ('Volvar', 'I-Shift', 12, 'Automated Manual')
+      ON CONFLICT (manufacturer_name, model_name) DO NOTHING
+    `);
+    console.log('✓ Migration: Seeded transmission options');
+
+    // Seed truck models (modern era, 2000-present)
+    await pool.query(`
+      INSERT INTO truck_models (manufacturer_id, name, body_style, year_start, year_end)
+      SELECT m.id, v.name, v.body_style, v.year_start, v.year_end FROM (VALUES
+        ('Kentworth', 'T680', 'Conventional', 2013, NULL),
+        ('Kentworth', 'T880', 'Conventional Vocational', 2013, NULL),
+        ('Kentworth', 'W900', 'Conventional Long Hood', 1961, NULL),
+        ('Peterbuilt', '389', 'Conventional Long Hood', 2007, 2022),
+        ('Peterbuilt', '579', 'Conventional Aero', 2012, NULL),
+        ('Peterbuilt', '567', 'Conventional Vocational', 2014, NULL),
+        ('Freightlite', 'Cascadia', 'Conventional Aero', 2007, NULL),
+        ('Freightlite', 'Columbia', 'Conventional', 2000, 2010),
+        ('Continental Trucks', 'LT Series', 'Conventional Aero', 2017, NULL),
+        ('Continental Trucks', 'RH Series', 'Conventional Vocational', 2018, NULL),
+        ('Mackson', 'Anthem', 'Conventional Aero', 2017, NULL),
+        ('Mackson', 'Pinnacle', 'Conventional', 2007, 2021),
+        ('Mackson', 'Granite', 'Conventional Vocational', 2002, NULL),
+        ('Volvar Trucks', 'VNL', 'Conventional Aero', 1996, NULL),
+        ('Volvar Trucks', 'VHD', 'Conventional Vocational', 1997, NULL),
+        ('Western Eagle', '49X', 'Conventional Long Hood', 2008, NULL),
+        ('Western Eagle', '57X', 'Conventional Aero', 2018, NULL)
+      ) AS v(mfr_name, name, body_style, year_start, year_end)
+      JOIN truck_manufacturers m ON m.name = v.mfr_name
+      ON CONFLICT (manufacturer_id, name) DO NOTHING
+    `);
+    console.log('✓ Migration: Seeded truck models');
+
+    // Seed trims for each model
+    await pool.query(`
+      INSERT INTO truck_trims (model_id, name, description, base_price)
+      SELECT mo.id, v.trim_name, v.description, v.base_price FROM (VALUES
+        ('T680', 'Base', 'Standard day cab configuration', 135000),
+        ('T680', 'Signature', 'Premium interior and aero package', 165000),
+        ('T680', '76" Sleeper', 'Full sleeper configuration', 175000),
+        ('T880', 'Base', 'Standard vocational spec', 145000),
+        ('T880', 'Severe Duty', 'Heavy vocational reinforced frame', 178000),
+        ('W900', 'Base', 'Classic long hood configuration', 155000),
+        ('W900', 'Studio Sleeper', 'Large sleeper long hood', 195000),
+        ('389', 'Base', 'Standard long hood', 150000),
+        ('389', 'Glider', 'Premium chrome and trim package', 210000),
+        ('579', 'Base', 'Standard aero day cab', 140000),
+        ('579', 'UltraLoft', 'Maximum sleeper aero package', 185000),
+        ('567', 'Base', 'Standard vocational spec', 148000),
+        ('Cascadia', 'Base', 'Standard day cab', 132000),
+        ('Cascadia', 'Premium Aero', 'Maximum fuel efficiency package', 168000),
+        ('Cascadia', '72" Sleeper', 'Mid-size sleeper configuration', 172000),
+        ('Columbia', 'Base', 'Standard day cab', 95000),
+        ('LT Series', 'Base', 'Standard aero day cab', 138000),
+        ('LT Series', 'Premium', 'Premium interior and sleeper', 174000),
+        ('RH Series', 'Base', 'Standard vocational spec', 142000),
+        ('Anthem', 'Base', 'Standard day cab', 137000),
+        ('Anthem', 'Sleeper', '70" sleeper configuration', 171000),
+        ('Pinnacle', 'Base', 'Standard configuration', 128000),
+        ('Granite', 'Base', 'Standard vocational spec', 144000),
+        ('VNL', 'Base', 'Standard day cab', 136000),
+        ('VNL', '760 Sleeper', 'Premium 70" sleeper', 173000),
+        ('VHD', 'Base', 'Standard vocational spec', 141000),
+        ('49X', 'Base', 'Classic long hood configuration', 158000),
+        ('57X', 'Base', 'Standard aero day cab', 139000)
+      ) AS v(model_name, trim_name, description, base_price)
+      JOIN truck_models mo ON mo.name = v.model_name
+      ON CONFLICT (model_id, name) DO NOTHING
+    `);
+    console.log('✓ Migration: Seeded truck trims');
   } catch (error) {
     if (error.message.includes('already exists')) {
       console.log('✓ Tables already exist');
